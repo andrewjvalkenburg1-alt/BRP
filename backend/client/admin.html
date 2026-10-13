@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BRP Admin Console</title>
-<meta name="description" content="BRP One admin console: users and roles, sites and rooms, work orders, purchasing, alerts, email outbox, audit log and demo reset. Sample data.">
+<meta name="description" content="BRP One admin console: users and roles, sites and rooms, work orders, purchasing, alerts, email outbox, audit log, agent proposals and demo reset. Sample data.">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -131,6 +131,17 @@ dialog h2{font:800 26px/1 var(--fd);text-transform:uppercase}
 .check input{width:20px;height:20px;accent-color:var(--sig)}
 .err{color:var(--act);font-size:14px}
 .err:empty{display:none}
+/* agent proposals */
+.tag.sample{border-color:var(--sig);color:var(--sig)}
+.sample-note{margin:0 0 14px;padding:10px 12px;border-left:4px solid var(--sig);background:var(--field);font-size:14px}
+.sample-note b{font:600 12px/1.6 var(--fl);letter-spacing:.12em;text-transform:uppercase;color:var(--sig)}
+.card.stat{cursor:default}
+.card.stat:hover{border-color:var(--rule)}
+.seg{border:1px solid var(--rule);background:var(--field);margin-bottom:12px;gap:6px}
+.seg .btn{min-height:40px;padding:8px 12px}
+.seg .btn.on{background:var(--ink);color:var(--kt);border-color:var(--ink)}
+details.raw summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+textarea.in{resize:vertical;font-size:16px}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--kt);padding:12px 16px;font-size:14px;max-width:calc(100vw - 32px);z-index:50;border-left:4px solid var(--sig)}
 .foot{max-width:1440px;margin:0 auto;padding:0 24px 32px;font-size:13px;color:var(--ink2)}
 @media (max-width:900px){.split{grid-template-columns:1fr}}
@@ -217,6 +228,50 @@ function fdt(t) {
 function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 3800); }
 
 /* =====================================================================
+   Operations agents. SAMPLE DATA for local demo mode: these proposals were written for the demo; no agent has run.
+   The real rows come from public.agent_proposals (migration 20261014000100_brp_agents.sql).
+   ===================================================================== */
+var AGENT_LABEL = { buyer_dispatch: 'Buyer and Dispatch', sensor_watch: 'Sensor Watch', inspection_scheduler: 'Inspection Scheduler', room_readiness: 'Room Readiness Planner', soldier_liaison: 'Soldier Liaison' };
+var FLAG_LABEL = { over_per_order_limit: 'Over $500 per order', over_weekly_cap: 'Over the weekly cap', over_site_lead_authority: 'Over $2,500: program manager', total_mismatch: 'Total does not match lines' };
+var SAMPLE_PROPOSALS = [
+  { id: 'AP-S0001', sample: true, agent: 'buyer_dispatch', inst: 'STW', kind: 'purchase_order', status: 'proposed', created_at: '2026-10-07T12:10:00.000Z', mode_at_proposal: 'shadow',
+    payload: { vendor_id: 'V1', lines: [{ sku: 'CAP-355', qty: 6, unit_cost: 14.6 }], shipping: 0, total: 87.6, approval_level: 'auto' },
+    rationale: 'SAMPLE DATA. CAB-STW holds 0 of CAP-355 against a reorder point of 3 (reorder quantity 6). Part record lists V1 at $14.60. My calculation: 6 x $14.60 = $87.60. Inside $500 per order and the weekly cap.',
+    cited_ids: ['CAB-STW', 'CAP-355', 'V1'], flags: [], approver_required: null },
+  { id: 'AP-S0002', sample: true, agent: 'buyer_dispatch', inst: 'STW', kind: 'purchase_order', status: 'proposed', created_at: '2026-10-07T12:11:00.000Z', mode_at_proposal: 'shadow',
+    payload: { vendor_id: 'V1', lines: [{ sku: 'PTAC-12K', qty: 2, unit_cost: 1180 }], shipping: 0, total: 2360, approval_level: 'site_lead' },
+    rationale: 'SAMPLE DATA. CAB-STW holds 0 of PTAC-12K (reorder point 1, reorder quantity 2). My calculation: 2 x $1,180.00 = $2,360.00. Over the $500 per-order limit, so the Fort Stewart site lead must approve through an approval task. One order, not split.',
+    cited_ids: ['CAB-STW', 'PTAC-12K', 'V1'], flags: ['over_per_order_limit'], approver_required: 'site_lead' },
+  { id: 'AP-S0003', sample: true, agent: 'buyer_dispatch', inst: 'STW', kind: 'backorder_decision', status: 'proposed', created_at: '2026-10-07T12:12:00.000Z', mode_at_proposal: 'shadow',
+    payload: { po_id: 'BRP-STW-27-0433', recommendation: 'wait', facts: 'PO is backordered with V3. No work order is waiting on it.' },
+    rationale: 'SAMPLE DATA. BRP-STW-27-0433 ($532.00, V3) is backordered and is a replenishment order with no work order attached. Recommend the site lead decide to wait. UNVERIFIED: the vendor\'s new ship date is not in the BRP records.',
+    cited_ids: ['BRP-STW-27-0433', 'V3'], flags: [], approver_required: null },
+  { id: 'AP-S0004', sample: true, agent: 'sensor_watch', inst: 'STW', kind: 'sensor_work_order', status: 'proposed', created_at: '2026-10-07T12:15:00.000Z', mode_at_proposal: 'shadow',
+    payload: { room_id: 'STW-412-1C', priority: 'Urgent', condition: 'Humidity above 60%', evidence: [{ room_id: 'STW-412-1C', field: 'sensor_rh', value: 61.8, read_at: '2026-10-07T11:55:00Z' }, { room_id: 'STW-412-1C', field: 'sensor_wall_rh', value: 79, read_at: '2026-10-07T11:55:00Z' }] },
+    rationale: 'SAMPLE DATA. STW-412-1C reads 61.8% RH with wall RH 79% at 11:55. Above the 30 to 60% standard. UNVERIFIED: how long it has been above 60%; the backend holds the latest reading only, so the 72-hour mold rule cannot be checked. Priority provisional; the barracks manager confirms at inspection.',
+    cited_ids: ['STW-412-1C'], flags: [], approver_required: null },
+  { id: 'AP-S0005', sample: true, agent: 'sensor_watch', inst: 'STW', kind: 'sensor_maintenance', status: 'approved', created_at: '2026-10-07T12:16:00.000Z', mode_at_proposal: 'shadow',
+    payload: { room_id: 'STW-412-1H', fault: 'low_battery' },
+    rationale: 'SAMPLE DATA. The STW-412-1H sensor reports low_battery. Its readings should be treated as unknown until a sensor technician replaces the battery.',
+    cited_ids: ['STW-412-1H'], flags: [], approver_required: null, decided_by_email: 'admin@brp.demo', decided_at: '2026-10-07T13:02:00.000Z', decision_note: 'Agree. Battery swap on the next round.' },
+  { id: 'AP-S0006', sample: true, agent: 'inspection_scheduler', inst: 'STW', kind: 'inspection_booking', status: 'rejected', created_at: '2026-10-07T12:20:00.000Z', mode_at_proposal: 'shadow',
+    payload: { type: 'vacant_walk', building_id: 'STW-118', room_ids: ['STW-118-1F'], manager_name: 'D. Hargrove', start: '2026-10-08T13:00:00-04:00', end: '2026-10-08T13:10:00-04:00' },
+    rationale: 'SAMPLE DATA. STW-118-1F is vacant and offline. A monthly vacant-room walk is due. UNVERIFIED: D. Hargrove\'s calendar and duty hours are not in the BRP records.',
+    cited_ids: ['STW-118-1F', 'STW-118'], flags: [], approver_required: null, decided_by_email: 'admin@brp.demo', decided_at: '2026-10-07T13:05:00.000Z', decision_note: 'Room is offline for mold remediation. Walk it after remediation, not now.' },
+  { id: 'AP-S0007', sample: true, agent: 'room_readiness', inst: 'STW', kind: 'readiness_plan', status: 'proposed', created_at: '2026-10-07T12:30:00.000Z', mode_at_proposal: 'shadow',
+    payload: { horizon_start: '2026-10-08', horizon_end: '2026-10-21', ready_now: ['STW-412-1B', 'STW-412-1E', 'STW-412-1G'], fill_next: [{ rank: 1, room_id: 'STW-412-1B', ready_now: true }, { rank: 2, room_id: 'STW-412-1E', ready_now: true }, { rank: 3, room_id: 'STW-412-1G', ready_now: true }], rooms_returned: [], not_planned: [{ room_id: 'STW-305-1A', reason: 'Status action with no work order hour estimate in the records' }] },
+    rationale: 'SAMPLE DATA. STW-412-1B, 1E and 1G are vacant, status ok, with sensor readings inside range at 11:55 and no open work order found. STW-305-1A is not planned: no hour estimate exists. The housing office assigns rooms; this is a recommendation.',
+    cited_ids: ['STW-412-1B', 'STW-412-1E', 'STW-412-1G', 'STW-305-1A'], flags: [], approver_required: null }
+];
+var SAMPLE_AGENT_SETTINGS = [
+  { agent: 'buyer_dispatch', inst: '*', mode: 'shadow', note: 'Readiness L2 (bench run-002). Shadow: proposes only.' },
+  { agent: 'sensor_watch', inst: '*', mode: 'shadow', note: 'Readiness L2 (bench run-003). Shadow: proposes only.' },
+  { agent: 'inspection_scheduler', inst: '*', mode: 'shadow', note: 'Readiness L2 (bench run-003). Shadow: proposes only.' },
+  { agent: 'room_readiness', inst: '*', mode: 'shadow', note: 'Readiness L2 (bench run-003). Shadow: proposes only.' },
+  { agent: 'soldier_liaison', inst: '*', mode: 'off', note: 'Not ready. Soldier-facing chat stays off until it passes its benches.' }
+];
+
+/* =====================================================================
    Data layer. LOCAL: browser-only copy of the seed (demo-data.js). REMOTE: BRPBackend + Supabase RLS.
    ===================================================================== */
 var api = LOCAL ? localApi() : remoteApi();
@@ -229,7 +284,12 @@ function localApi() {
     return clone(DEMO.tables);
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify({ v: DEMO.generated, t: DB })); } catch (e) { /* storage blocked or full: keep in memory */ } }
-  function db() { if (!DB) DB = load(); return DB; }
+  function db() { if (!DB) { DB = load(); agentSamples(DB); } return DB; }
+  /* The operations agents' tables are not in the generated demo data; the console adds labeled samples. */
+  function agentSamples(d) {
+    if (!d.agent_proposals) d.agent_proposals = clone(SAMPLE_PROPOSALS);
+    if (!d.agent_settings) d.agent_settings = clone(SAMPLE_AGENT_SETTINGS);
+  }
   function nowIso() { return new Date().toISOString(); }
   function audit(action, table, rowId, oldRow, newRow) {
     var a = db().audit_log; a.unshift({ id: (a.length ? a[0].id : 0) + 1, at: nowIso(), actor_id: me && me.id, actor_email: me && me.email, actor_role: me && me.role, action: action, table_name: table, row_id: rowId, old_row: oldRow, new_row: newRow });
@@ -306,13 +366,36 @@ function localApi() {
     },
     reset: function () {
       var keep = db().audit_log, people = db().profiles.filter(function (p) { return !p.demo; });
-      DB = clone(DEMO.tables); DB.profiles = DB.profiles.concat(people); DB.audit_log = keep;
+      DB = clone(DEMO.tables); DB.profiles = DB.profiles.concat(people); DB.audit_log = keep; agentSamples(DB);
       audit('demo.reset', null, null, null, { work_orders: DB.work_orders.length, purchase_orders: DB.purchase_orders.length });
       save();
       me = DB.profiles.filter(function (x) { return x.email === me.email; })[0] || me;
       return Promise.resolve({ ok: true });
     },
-    settings: function () { return Promise.resolve([{ key: 'email_delivery', value: { enabled: false } }, { key: 'demo_mode', value: { enabled: true } }]); }
+    settings: function () { return Promise.resolve([{ key: 'email_delivery', value: { enabled: false } }, { key: 'demo_mode', value: { enabled: true } }]); },
+    /* Same rules as public.agent_proposal_decide: Admin only, once, a reason to reject, demo admin decides sample rows only. */
+    decide: function (id, decision, note) {
+      var p = db().agent_proposals.filter(function (x) { return x.id === id; })[0];
+      if (!p) return Promise.reject(new Error('No proposal ' + id));
+      if (!me || me.role !== 'admin') return Promise.reject(new Error('Admin only'));
+      if (me.demo && !p.sample) return Promise.reject(new Error('The demo admin can decide sample proposals only.'));
+      if (p.status !== 'proposed') return Promise.reject(new Error('Proposal ' + id + ' was already ' + p.status + '.'));
+      if (decision === 'rejected' && !String(note || '').trim()) return Promise.reject(new Error('Say why you rejected it.'));
+      var old = { status: p.status };
+      p.status = decision; p.decided_by = me.id; p.decided_by_email = me.email; p.decided_at = nowIso(); p.decision_note = String(note || '').trim() || null;
+      audit('update', 'agent_proposals', id, old, { status: p.status, decided_by_email: p.decided_by_email, decision_note: p.decision_note }); save();
+      return Promise.resolve(clone(p));
+    },
+    setMode: function (agent, inst, mode, note) {
+      if (!me || me.role !== 'admin') return Promise.reject(new Error('Admin only'));
+      if (me.demo && (mode === 'supervised' || mode === 'live')) return Promise.reject(new Error('The demo admin can set off or shadow only.'));
+      var S = db().agent_settings, r = S.filter(function (x) { return x.agent === agent && x.inst === (inst || '*'); })[0];
+      var old = r ? { mode: r.mode } : null;
+      if (!r) { r = { agent: agent, inst: inst || '*' }; S.push(r); }
+      r.mode = mode; r.note = note || r.note || null; r.updated_at = nowIso(); r.updated_by = me.id;
+      audit(old ? 'update' : 'insert', 'agent_settings', agent + ':' + r.inst, old, { mode: mode }); save();
+      return Promise.resolve(clone(r));
+    }
   };
 }
 
@@ -321,7 +404,7 @@ function remoteApi() {
   function key(t) { return { stock: 'cabinet_id', parts: 'sku', settings: 'key' }[t] || 'id'; }
   var ORDER = { profiles: ['email'], installations: ['id'], buildings: ['id'], rooms: ['id'], work_orders: ['created_at', false], purchase_orders: ['issued_at', false],
     purchase_list: ['id'], email_outbox: ['created_at', false], alerts: ['at', false], alert_recipients: ['id'], satisfaction: ['at', false], parts: ['sku'],
-    catalog_items: ['id'], stock: ['cabinet_id'], vendors: ['id'] };
+    catalog_items: ['id'], stock: ['cabinet_id'], vendors: ['id'], agent_proposals: ['created_at', false], agent_settings: ['agent'] };
   function toMe(p) { return p ? { id: p.id, email: p.email, full_name: p.name, role: p.role, inst: p.inst, active: p.active, demo: p.demo } : null; }
   return {
     mode: 'remote',
@@ -343,8 +426,16 @@ function remoteApi() {
     setRole: function (id, role, inst, active) { return BE.admin.setRole(id, role, inst, active); },
     notify: function (a) { return BE.notify(a); },
     reset: function () { return BE.admin.resetDemo(); },
-    settings: function () { return BE.admin.settings(); }
+    settings: function () { return BE.admin.settings(); },
+    decide: function (id, decision, note) { return rpc('agent_proposal_decide', { p_id: id, p_decision: decision, p_note: note || null }); },
+    setMode: function (agent, inst, mode, note) { return rpc('admin_set_agent_mode', { p_agent: agent, p_inst: inst || '*', p_mode: mode, p_note: note || null }); }
   };
+  function rpc(name, args) {
+    return BE.client().then(function (c) {
+      if (!c) throw new Error('No backend configured.');
+      return c.rpc(name, args).then(function (r) { if (r.error) throw new Error(r.error.message); return r.data; });
+    });
+  }
 }
 
 /* =====================================================================
@@ -383,7 +474,7 @@ $('g-form').addEventListener('submit', function (e) {
 /* =====================================================================
    Console
    ===================================================================== */
-var TABS = [['overview', 'Overview'], ['users', 'Users and roles'], ['sites', 'Sites'], ['rooms', 'Rooms'], ['wo', 'Work orders'], ['parts', 'Parts and catalog'],
+var TABS = [['overview', 'Overview'], ['agents', 'Agent proposals'], ['users', 'Users and roles'], ['sites', 'Sites'], ['rooms', 'Rooms'], ['wo', 'Work orders'], ['parts', 'Parts and catalog'],
   ['stock', 'Stock'], ['po', 'Purchase orders'], ['plist', 'Purchase list'], ['csat', 'Satisfaction'], ['alerts', 'Alerts'], ['outbox', 'Email outbox'], ['audit', 'Audit log']];
 var cur = 'overview', CACHE = {}, VIEW = {}, INSTS = [];
 try { var saved = localStorage.getItem('brp-admin-tab'); if (saved && TABS.some(function (t) { return t[0] === saved; })) cur = saved; } catch (e) { /* ok */ }
@@ -449,22 +540,29 @@ var PANELS = {};
 var dot = function (cls, text) { return '<span class="dot ' + cls + '">' + esc(text) + '</span>'; };
 var STAT_CLS = { ok: 'ok', watch: 'watch', action: 'act', offline: 'off', open: 'watch', in_progress: 'ok', waiting_parts: 'watch', closed: 'off',
   requested: 'watch', issued: 'ok', shipped: 'ok', backordered: 'act', received: 'off', cancelled: 'off', approved: 'ok', ordered: 'ok', not_ordered: 'watch',
-  logged: 'watch', sent: 'ok', failed: 'act', suppressed: 'off', queued: 'watch' };
+  logged: 'watch', sent: 'ok', failed: 'act', suppressed: 'off', queued: 'watch', proposed: 'watch', rejected: 'act' };
 var LBL = { ok: 'OK', watch: 'Watch', action: 'Action', offline: 'Offline', open: 'Open', in_progress: 'In progress', waiting_parts: 'Waiting on parts', closed: 'Closed',
   requested: 'Requested', issued: 'Issued', shipped: 'Shipped', backordered: 'Backordered', received: 'Received', cancelled: 'Cancelled', approved: 'Approved', ordered: 'Ordered',
-  not_ordered: 'Not ordered', logged: 'Logged, not sent', sent: 'Sent', failed: 'Failed', suppressed: 'Suppressed', queued: 'Queued' };
+  not_ordered: 'Not ordered', logged: 'Logged, not sent', sent: 'Sent', failed: 'Failed', suppressed: 'Suppressed', queued: 'Queued', proposed: 'Waiting', rejected: 'Rejected' };
+var MODE_LBL = { off: 'Off', shadow: 'Shadow (proposes only)', supervised: 'Supervised', live: 'Live' };
+function flagTags(p) {
+  var f = (p.flags || []).map(function (x) { return '<span class="tag crit">' + esc(FLAG_LABEL[x] || x) + '</span>'; });
+  if (p.approver_required) f.push('<span class="tag high">Needs ' + esc(p.approver_required === 'site_lead' ? 'site lead' : 'program manager') + '</span>');
+  return f.join(' ');
+}
 var st = function (s) { return dot(STAT_CLS[s] || 'off', LBL[s] || s); };
 
 /* ---------- views ---------- */
 var VIEWS = {
   overview: function () {
-    return Promise.all(['profiles', 'rooms', 'work_orders', 'purchase_orders', 'purchase_list', 'email_outbox', 'alerts', 'audit_log', 'stock'].map(function (t) { return get(t); })).then(function (r) {
+    return Promise.all(['profiles', 'rooms', 'work_orders', 'purchase_orders', 'purchase_list', 'email_outbox', 'alerts', 'audit_log', 'stock', 'agent_proposals'].map(function (t) { return get(t).catch(function () { return []; }); })).then(function (r) {
       var openWo = r[2].filter(function (w) { return w.status !== 'closed'; }).length;
       var low = r[8].filter(function (s) { return s.rop != null && s.qty < s.rop; }).length;
       var card = function (tab, n, l) { return '<button class="card" type="button" data-go="' + tab + '"><span class="lbl">' + esc(l) + '</span><b>' + n + '</b></button>'; };
       return head('Overview', 'Accounts, data and the demo controls. Every number is sample data.') +
         '<div class="cards">' + card('users', r[0].length, 'Accounts') + card('rooms', r[1].length, 'Rooms') + card('wo', openWo, 'Open work orders') + card('po', r[3].length, 'Purchase orders') +
-        card('plist', r[4].length, 'Purchase list') + card('stock', low, 'Below reorder point') + card('alerts', r[6].length, 'Alerts') + card('outbox', r[5].length, 'Outbox rows') + card('audit', r[7].length, 'Audit entries') + '</div>' +
+        card('plist', r[4].length, 'Purchase list') + card('stock', low, 'Below reorder point') + card('alerts', r[6].length, 'Alerts') + card('outbox', r[5].length, 'Outbox rows') + card('audit', r[7].length, 'Audit entries') +
+        card('agents', r[9].filter(function (p) { return p.status === 'proposed'; }).length, 'Agent proposals waiting') + '</div>' +
         '<div class="split"><section class="panel"><div class="panel-h"><h2>Reset demo data</h2></div><div class="pb">' +
         '<p>Reloads every work order, room, PO, stock count, purchase list item, alert and outbox row from the sample set, and puts the nine demo accounts back on their demo roles. Accounts that are not demo accounts and push tokens stay. The audit log keeps a record of the reset.</p>' +
         '<div class="row" style="justify-content:flex-start"><button class="btn danger" type="button" id="reset">Reset demo data</button></div></div></section>' +
@@ -474,6 +572,36 @@ var VIEWS = {
         '<dt>Push</dt><dd>Sent to registered phones only when APNs or FCM keys are set on the server.</dd>' +
         '<dt>Mode</dt><dd>' + (LOCAL ? 'Local demo mode. No server.' : 'Server. Row-level security on.') + '</dd></dl>' +
         '<div class="row" style="justify-content:flex-start"><button class="btn" type="button" data-go="alerts">Send a test alert</button></div></div></section></div>';
+    });
+  },
+  agents: function () {
+    return Promise.all([get('agent_proposals'), get('agent_settings')]).then(function (r) {
+      var P = r[0], S = r[1];
+      var nWait = P.filter(function (p) { return p.status === 'proposed'; }).length, nYes = P.filter(function (p) { return p.status === 'approved'; }).length,
+        nNo = P.filter(function (p) { return p.status === 'rejected'; }).length;
+      var agree = nYes + nNo ? Math.round(100 * nYes / (nYes + nNo)) + '%' : 'None yet';
+      var v = VIEW.agentsStatus = VIEW.agentsStatus || 'proposed';
+      var list = P.filter(function (p) { return v === 'all' || p.status === v; });
+      var sampleNote = P.some(function (p) { return p.sample; }) ? '<p class="sample-note" role="note"><b>Sample data.</b> Rows marked Sample were written for this demo. No agent has run against them.</p>' : '';
+      var stat = function (n, l) { return '<div class="card stat"><span class="lbl">' + esc(l) + '</span><b>' + n + '</b></div>'; };
+      return head('Agent proposals', 'The operations agents run in shadow mode. They read BRP records and write what they would do, with the records they cite. <b>Approve means you agree. Nothing is executed.</b> A rejection needs a reason. The agreement rate is the Level 4 measure in the readiness ladder.') +
+        sampleNote +
+        '<div class="cards">' + stat(nWait, 'Waiting for a decision') + stat(nYes, 'Approved') + stat(nNo, 'Rejected') + stat(agree, 'Agreement rate') + '</div>' +
+        '<div class="tools seg" role="group" aria-label="Show proposals">' + [['proposed', 'Waiting'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']].map(function (o) {
+          return '<button type="button" class="btn' + (v === o[0] ? ' on' : '') + '" data-astatus="' + o[0] + '" aria-pressed="' + (v === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+        tablePanel('aprop', 'Proposals', list, [{ k: 'id', l: 'ID', f: function (p) { return esc(p.id) + (p.sample ? ' <span class="tag sample">Sample</span>' : ''); } },
+          { l: 'When', f: function (p) { return esc(fdt(p.created_at)); } }, { l: 'Agent', t: function (p) { return AGENT_LABEL[p.agent]; }, f: function (p) { return esc(AGENT_LABEL[p.agent] || p.agent); } },
+          { k: 'inst', l: 'Inst' }, { k: 'kind', l: 'Kind', f: function (p) { return esc(String(p.kind).replace(/_/g, ' ')); } },
+          { k: 'rationale', l: 'Why', f: function (p) { return '<div class="wrap small">' + esc(p.rationale) + '</div>'; } },
+          { l: 'Cites', t: function (p) { return (p.cited_ids || []).join(' '); }, f: function (p) { return '<div class="wrap small">' + esc((p.cited_ids || []).join(', ')) + '</div>'; } },
+          { l: 'Flags', t: function (p) { return (p.flags || []).join(' '); }, f: flagTags },
+          { l: 'Status', t: function (p) { return LBL[p.status]; }, f: function (p) { return st(p.status); } }],
+        { edit: reviewProposal, editLabel: 'Review' }) +
+        tablePanel('amode', 'Agent modes', S, [{ l: 'Agent', t: function (x) { return AGENT_LABEL[x.agent]; }, f: function (x) { return esc(AGENT_LABEL[x.agent] || x.agent); } },
+          { l: 'Installation', f: function (x) { return esc(x.inst === '*' ? 'All' : x.inst); } },
+          { l: 'Mode', t: function (x) { return x.mode; }, f: function (x) { return dot({ off: 'off', shadow: 'watch', supervised: 'ok', live: 'ok' }[x.mode] || 'off', MODE_LBL[x.mode] || x.mode); } },
+          { k: 'note', l: 'Note', f: function (x) { return '<div class="wrap small">' + esc(x.note || '') + '</div>'; } }],
+        { edit: editMode, editLabel: 'Change', inst: false });
     });
   },
   users: function () {
@@ -619,6 +747,7 @@ $('main').addEventListener('click', function (e) {
   if (b.hasAttribute('data-go')) { var t = b.getAttribute('data-go'); var tb = $('tabs').querySelector('[data-tab="' + t + '"]'); if (tb) tb.click(); return; }
   if (b.hasAttribute('data-more')) { VIEW[b.getAttribute('data-more')].n += 50; render(); return; }
   if (b.hasAttribute('data-edit')) { var p = PANELS[b.getAttribute('data-edit')]; p.edit(p.rows[+b.getAttribute('data-i')]); return; }
+  if (b.hasAttribute('data-astatus')) { VIEW.agentsStatus = b.getAttribute('data-astatus'); if (VIEW.aprop) VIEW.aprop.n = 50; render(); return; }
   if (b.id === 'reset') return confirmReset();
   if (b.id === 'pl-add') return addPl();
   if (b.id === 'al-new') return newAlert();
@@ -708,6 +837,37 @@ function newAlert() {
 function viewMail(r) {
   openDialog(r.subject, '<dl class="kv"><dt>To</dt><dd>' + esc(r.to_name + ' <' + r.to_email + '>') + '</dd><dt>Role</dt><dd>' + esc(r.to_role) + '</dd><dt>Status</dt><dd>' + st(r.status) +
     (r.error ? ' ' + esc(r.error) : '') + '</dd><dt>Written</dt><dd>' + esc(fdt(r.created_at)) + '</dd></dl><pre class="mail">' + esc(r.body) + '</pre>', null);
+}
+function reviewProposal(p) {
+  var isPo = p.payload && p.payload.total != null && p.kind === 'purchase_order';
+  var body = '<p class="small muted">' + esc(AGENT_LABEL[p.agent] || p.agent) + ' · ' + esc(p.inst) + ' · ' + esc(String(p.kind).replace(/_/g, ' ')) + ' · ' + esc(fdt(p.created_at)) + (p.sample ? ' · <span class="tag sample">Sample data</span>' : '') + '</p>' +
+    '<dl class="kv"><dt>Why</dt><dd>' + esc(p.rationale) + '</dd><dt>Cites</dt><dd>' + esc((p.cited_ids || []).join(', ')) + '</dd>' +
+    (isPo ? '<dt>Order total</dt><dd>' + esc(money(p.payload.total)) + '</dd>' : '') +
+    ((p.flags || []).length || p.approver_required ? '<dt>Flags</dt><dd>' + flagTags(p) + '</dd>' : '') +
+    '<dt>Status</dt><dd>' + st(p.status) + (p.decided_by_email ? ' by ' + esc(p.decided_by_email) + ', ' + esc(fdt(p.decided_at)) : '') + (p.decision_note ? '<br>' + esc(p.decision_note) : '') + '</dd></dl>' +
+    '<details class="raw"><summary class="lbl">Proposal details (JSON)</summary><pre class="mail">' + esc(JSON.stringify(p.payload, null, 2)) + '</pre></details>';
+  if (p.status !== 'proposed') return openDialog(p.id, body, null);
+  body += (p.approver_required ? '<p class="small"><b>Money:</b> approving here records that you agree. The order itself still needs the ' + (p.approver_required === 'site_lead' ? 'site lead' : 'program manager') + '\'s approval task.</p>' : '') +
+    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="lbl">Your decision</legend>' +
+    '<label class="check"><input type="radio" name="f-dec" value="approved"> Approve: I agree with this proposal</label>' +
+    '<label class="check"><input type="radio" name="f-dec" value="rejected"> Reject</label></fieldset>' +
+    '<div class="field"><label class="lbl" for="f-note">Note (required to reject)</label><textarea class="in" id="f-note" rows="3"></textarea></div>';
+  openDialog('Review ' + p.id, body, function () {
+    var c = dform.querySelector('input[name="f-dec"]:checked'); if (!c) throw new Error('Choose Approve or Reject.');
+    var note = val('f-note').trim();
+    if (c.value === 'rejected' && !note) throw new Error('Say why you rejected it.');
+    return api.decide(p.id, c.value, note).then(function () { refresh(['agent_proposals', 'audit_log']); return p.id + (c.value === 'approved' ? ' approved. Nothing was executed.' : ' rejected.'); });
+  }, 'Record decision');
+}
+function editMode(x) {
+  var opts = [['off', 'Off'], ['shadow', 'Shadow (proposes only)'], ['supervised', 'Supervised'], ['live', 'Live']];
+  openDialog(AGENT_LABEL[x.agent] + ' · ' + (x.inst === '*' ? 'All installations' : x.inst),
+    '<p class="small muted">Off stops the agent reading and proposing for this scope at once. Supervised and live need readiness Level 5 and 6 and a non-demo Admin; see backend/agents/AGENTS.md.</p>' +
+    sel('f-mode', 'Mode', opts, x.mode) + inp('f-mnote', 'Note', x.note),
+  function () {
+    var m = val('f-mode');
+    return api.setMode(x.agent, x.inst, m, val('f-mnote').trim() || null).then(function () { refresh(['agent_settings', 'audit_log']); return (AGENT_LABEL[x.agent] || x.agent) + ' is now ' + (MODE_LBL[m] || m) + '.'; });
+  });
 }
 function confirmReset() {
   openDialog('Reset demo data?', '<p>This reloads all sample work orders, rooms, POs, stock, purchase list items, alerts and outbox rows, and puts the nine demo accounts back on their demo roles. Changes made since the last reset are lost. Real accounts and push tokens stay.</p>',

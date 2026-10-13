@@ -36,7 +36,7 @@ The CLI comes from npm. Nothing is installed globally.
 cd backend
 export SUPABASE_ACCESS_TOKEN=<token>                            # option A
 npx -y supabase@2.118.0 link --project-ref <ref> -p '<db password>'
-npx -y supabase@2.118.0 db push --include-seed                  # 3 migrations + seed
+npx -y supabase@2.118.0 db push --include-seed                  # 4 migrations + seed
 npx -y supabase@2.118.0 functions deploy notify admin-reset
 
 # option B, database password only (the URI is under Project Settings > Database > Connection string, session pooler)
@@ -67,11 +67,14 @@ npx -y supabase@2.118.0 db push --include-seed \
 | `supabase/migrations/20261013000100_brp_schema.sql` | Tables, sequences, the `brp_role` domain, settings, and `brp_seed.*` snapshot tables |
 | `supabase/migrations/20261013000200_brp_rls.sql` | Role helpers, row-level security on every table, grants (anon gets nothing) |
 | `supabase/migrations/20261013000300_brp_functions.sql` | Triggers, audit log, and the RPCs: `whoami`, `raise_alert`, `mark_alert_read`, `register_push_token`, `unregister_push_token`, `admin_set_role`, `admin_reset_demo` |
+| `supabase/migrations/20261014000100_brp_agents.sql` | Operations agents in shadow mode: `agent_runs`, `agent_proposals`, `agent_settings`, the `brp_agent` role (reads ops tables, inserts proposals only), `buyer_weekly_cap` and `buyer_spend_check`, and the admin RPCs `agent_proposal_decide` and `admin_set_agent_mode` |
 | `supabase/seed/build-seed.mjs` | Builds the seed from `brp-data.js`, the ERP and satisfaction sample files and `parts-catalog.json` |
 | `supabase/seed/seed.sql` | Generated. Loads `brp_seed.*`, creates the 9 demo accounts, copies everything live |
 | `supabase/seed/create-demo-users.mjs` | Fallback that creates the demo accounts through the Auth Admin API |
 | `supabase/functions/notify` | Alert fan-out, outbox, email (off by default), push through APNs or FCM when keys are set |
 | `supabase/functions/admin-reset` | Admin-only demo reset. Also puts the demo accounts back on the demo password |
+| `supabase/functions/agent-mcp` | MCP server the Managed Agents call. Bearer token per agent; each call runs as `brp_agent` with fixed SQL |
+| `agents/` | Agent definitions, `deploy.mjs` (with `--dry-run`), the reply checker, tests, and the runbook `agents/AGENTS.md` |
 | `supabase/config.toml` | CLI config. Seed path, sign-up off for local stacks, JWT required on functions |
 | `client/brp-config.js` | The one file Andrew edits (URL and anon key) |
 | `client/brp-backend.js` | `window.BRPBackend` adapter. Loads supabase-js 2.45.4 from jsDelivr |
@@ -182,7 +185,8 @@ Supabase is a commercial cloud service. Nothing here claims it meets FedRAMP, Do
 
 ## Testing
 
-- **RLS suite.** `test/run-local.sh` runs on any local Postgres 15+ with no Supabase needed. It loads a small shim (`test/supabase-shim.sql`: the `auth` schema, `auth.uid()` and the anon, authenticated and service_role roles), the three migrations and the seed, then `test/rls-test.sql`. That suite signs in as each demo account and checks 63 rules. They cover what each role can read, refused writes, alert fan-out and outbox rows, push tokens, role changes, the demo-admin limits, the reset, and the reset refusal once demo mode is off.
+- **RLS suite.** `test/run-local.sh` runs on any local Postgres 15+ with no Supabase needed. It loads a small shim (`test/supabase-shim.sql`: the `auth` schema, `auth.uid()` and the anon, authenticated and service_role roles), the four migrations and the seed, then `test/rls-test.sql` and `test/agents-test.sql`. That suite signs in as each demo account and checks 63 rules. They cover what each role can read, refused writes, alert fan-out and outbox rows, push tokens, role changes, the demo-admin limits, the reset, and the reset refusal once demo mode is off. `agents-test.sql` checks 97 more: the buyer weekly cap, what the agent role can read and write, proposal checks, the off switch and admin decisions.
+- **Agents.** `agents/test/run-all.sh` runs the SQL suites, the MCP handler test, the reply checker test (mocked model, no API) and the Playwright test of the Agent proposals panel. See `agents/AGENTS.md`.
 - **CLI path.** The same files pass `supabase db push --include-seed` (CLI 2.118.0) against a local database.
 - **Edge Functions.** Both type-check with Deno 2.1.4.
 - **Admin console.** It was tested in Playwright Chromium at 1280 and 390 px in local demo mode: no console errors, no sideways page scroll, and non-admin sign-ins refused.

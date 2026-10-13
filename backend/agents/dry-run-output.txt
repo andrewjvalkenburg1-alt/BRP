@@ -1,0 +1,727 @@
+skip soldier_liaison: disabled (readiness L1). Never deployed by this script.
+DRY RUN. Nothing is sent. 4 agents: buyer_dispatch, inspection_scheduler, room_readiness, sensor_watch. MCP base: https://<project-ref>.supabase.co/functions/v1/agent-mcp/
+
+--- [1] List /v1/environments
+GET https://api.anthropic.com/v1/environments?limit=100&beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+
+--- [2] Environment create brp-agents-shadow
+POST https://api.anthropic.com/v1/environments?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "name": "brp-agents-shadow",
+  "description": "BRP operations agents, shadow mode. No package installs and no outbound hosts: the agents reach only their MCP server.",
+  "config": {
+    "type": "cloud",
+    "networking": {
+      "type": "limited",
+      "allowed_hosts": [],
+      "allow_mcp_servers": true,
+      "allow_package_managers": false
+    }
+  },
+  "metadata": {
+    "brp": "agents"
+  }
+}
+
+--- [3] List /v1/vaults
+GET https://api.anthropic.com/v1/vaults?limit=100&beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+
+--- [4] Vault create
+POST https://api.anthropic.com/v1/vaults?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "display_name": "BRP agents",
+  "metadata": {
+    "brp": "agents"
+  }
+}
+
+--- [5] Credential create buyer_dispatch
+POST https://api.anthropic.com/v1/vaults/<vault_id_2>/credentials?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "display_name": "BRP MCP buyer_dispatch",
+  "auth": {
+    "type": "static_bearer",
+    "mcp_server_url": "https://<project-ref>.supabase.co/functions/v1/agent-mcp/buyer_dispatch",
+    "token": "<redacted: from env BRP_AGENT_TOKEN_BUYER_DISPATCH>"
+  },
+  "metadata": {
+    "brp_agent": "buyer_dispatch"
+  }
+}
+
+--- [6] Credential create inspection_scheduler
+POST https://api.anthropic.com/v1/vaults/<vault_id_2>/credentials?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "display_name": "BRP MCP inspection_scheduler",
+  "auth": {
+    "type": "static_bearer",
+    "mcp_server_url": "https://<project-ref>.supabase.co/functions/v1/agent-mcp/inspection_scheduler",
+    "token": "<redacted: from env BRP_AGENT_TOKEN_INSPECTION_SCHEDULER>"
+  },
+  "metadata": {
+    "brp_agent": "inspection_scheduler"
+  }
+}
+
+--- [7] Credential create room_readiness
+POST https://api.anthropic.com/v1/vaults/<vault_id_2>/credentials?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "display_name": "BRP MCP room_readiness",
+  "auth": {
+    "type": "static_bearer",
+    "mcp_server_url": "https://<project-ref>.supabase.co/functions/v1/agent-mcp/room_readiness",
+    "token": "<redacted: from env BRP_AGENT_TOKEN_ROOM_READINESS>"
+  },
+  "metadata": {
+    "brp_agent": "room_readiness"
+  }
+}
+
+--- [8] Credential create sensor_watch
+POST https://api.anthropic.com/v1/vaults/<vault_id_2>/credentials?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "display_name": "BRP MCP sensor_watch",
+  "auth": {
+    "type": "static_bearer",
+    "mcp_server_url": "https://<project-ref>.supabase.co/functions/v1/agent-mcp/sensor_watch",
+    "token": "<redacted: from env BRP_AGENT_TOKEN_SENSOR_WATCH>"
+  },
+  "metadata": {
+    "brp_agent": "sensor_watch"
+  }
+}
+
+--- [9] List /v1/agents
+GET https://api.anthropic.com/v1/agents?limit=100&beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+
+--- [10] List /v1/deployments
+GET https://api.anthropic.com/v1/deployments?limit=100&beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+
+--- [11] Agent create buyer_dispatch
+POST https://api.anthropic.com/v1/agents?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "name": "BRP Buyer and Dispatch (shadow)",
+  "description": "Shadow mode. Reviews open work orders, parts, stock, the purchase list and purchase orders; proposes dispatch, priority, human tasks, quote requests and purchase orders under the money rule.",
+  "model": "claude-opus-5-5",
+  "system": "<26723 chars from the agent definition; first line: You are the BRP Buyer and Dispatch agent for the Barracks Readiness Program (BRP). SAMPLE ...>",
+  "mcp_servers": [
+    {
+      "type": "url",
+      "name": "brp",
+      "url": "https://<project-ref>.supabase.co/functions/v1/agent-mcp/buyer_dispatch"
+    }
+  ],
+  "tools": [
+    {
+      "type": "agent_toolset_20260401",
+      "default_config": {
+        "permission_policy": {
+          "type": "always_ask"
+        }
+      },
+      "configs": [
+        {
+          "name": "bash",
+          "enabled": false
+        },
+        {
+          "name": "write",
+          "enabled": false
+        },
+        {
+          "name": "edit",
+          "enabled": false
+        },
+        {
+          "name": "web_fetch",
+          "enabled": false
+        },
+        {
+          "name": "web_search",
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "type": "mcp_toolset",
+      "mcp_server_name": "brp",
+      "default_config": {
+        "permission_policy": {
+          "type": "always_ask"
+        }
+      },
+      "configs": [
+        {
+          "name": "brp_begin_run",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        },
+        {
+          "name": "brp_read",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        },
+        {
+          "name": "brp_propose",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        },
+        {
+          "name": "brp_end_run",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        },
+        {
+          "name": "brp_spend_status",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "brp_agent": "buyer_dispatch",
+    "brp_readiness": "2",
+    "brp_mode": "shadow",
+    "brp_pack": "de47fe60a7f9"
+  }
+}
+
+--- [12] Deployment create buyer_dispatch
+POST https://api.anthropic.com/v1/deployments?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "name": "BRP Buyer and Dispatch (shadow)",
+  "description": "Shadow mode. Reviews open work orders, parts, stock, the purchase list and purchase orders; proposes dispatch, priority, human tasks, quote requests and purchase orders under the money rule. Schedule: Every 2 hours from 6:00 AM to 6:00 PM Central, every day (7 runs a day).",
+  "agent": {
+    "type": "agent",
+    "id": "<agent_id_7>",
+    "version": 1
+  },
+  "environment_id": "<environment_id_1>",
+  "vault_ids": [
+    "<vault_id_2>"
+  ],
+  "initial_events": [
+    {
+      "type": "user.message",
+      "content": [
+        {
+          "type": "text",
+          "text": "Scheduled shadow run for Buyer and Dispatch. Review open and waiting-on-parts work orders, the purchase list, cabinet stock below reorder point, and purchase orders that are backordered or late. Propose what the back office should do next, each with cited record ids. Check brp_spend_status before any purchase proposal."
+        }
+      ]
+    }
+  ],
+  "schedule": {
+    "type": "cron",
+    "expression": "0 6-18/2 * * *",
+    "timezone": "America/Chicago"
+  },
+  "budget": {
+    "type": "limit",
+    "max_list_cost": {
+      "amount": "300",
+      "currency": "USD"
+    }
+  },
+  "metadata": {
+    "brp_agent": "buyer_dispatch",
+    "brp_readiness": "2",
+    "brp_mode": "shadow",
+    "brp_pack": "de47fe60a7f9"
+  }
+}
+
+--- [13] Agent create inspection_scheduler
+POST https://api.anthropic.com/v1/agents?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "name": "BRP Inspection Scheduler (shadow)",
+  "description": "Shadow mode. Finds work orders that need a barracks manager verification after a repair, and rooms that need move-in, move-out or vacant-room inspections; proposes bookings inside the required windows.",
+  "model": "claude-opus-5-5",
+  "system": "<22375 chars from the agent definition; first line: You are the BRP Inspection Scheduler agent for the Barracks Readiness Program (BRP). SAMPL...>",
+  "mcp_servers": [
+    {
+      "type": "url",
+      "name": "brp",
+      "url": "https://<project-ref>.supabase.co/functions/v1/agent-mcp/inspection_scheduler"
+    }
+  ],
+  "tools": [
+    {
+      "type": "agent_toolset_20260401",
+      "default_config": {
+        "permission_policy": {
+          "type": "always_ask"
+        }
+      },
+      "configs": [
+        {
+          "name": "bash",
+          "enabled": false
+        },
+        {
+          "name": "write",
+          "enabled": false
+        },
+        {
+          "name": "edit",
+          "enabled": false
+        },
+        {
+          "name": "web_fetch",
+          "enabled": false
+        },
+        {
+          "name": "web_search",
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "type": "mcp_toolset",
+      "mcp_server_name": "brp",
+      "default_config": {
+        "permission_policy": {
+          "type": "always_ask"
+        }
+      },
+      "configs": [
+        {
+          "name": "brp_begin_run",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        },
+        {
+          "name": "brp_read",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        },
+        {
+          "name": "brp_propose",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        },
+        {
+          "name": "brp_end_run",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "brp_agent": "inspection_scheduler",
+    "brp_readiness": "2",
+    "brp_mode": "shadow",
+    "brp_pack": "de47fe60a7f9"
+  }
+}
+
+--- [14] Deployment create inspection_scheduler
+POST https://api.anthropic.com/v1/deployments?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "name": "BRP Inspection Scheduler (shadow)",
+  "description": "Shadow mode. Finds work orders that need a barracks manager verification after a repair, and rooms that need move-in, move-out or vacant-room inspections; proposes bookings inside the required windows. Schedule: 7:00 AM and 1:00 PM Central, Monday to Friday (10 runs a week).",
+  "agent": {
+    "type": "agent",
+    "id": "<agent_id_9>",
+    "version": 1
+  },
+  "environment_id": "<environment_id_1>",
+  "vault_ids": [
+    "<vault_id_2>"
+  ],
+  "initial_events": [
+    {
+      "type": "user.message",
+      "content": [
+        {
+          "type": "text",
+          "text": "Scheduled shadow run for the Inspection Scheduler. Find work orders whose repair is reported complete and that have no passed verification, and rooms whose status or occupancy calls for an inspection. Propose one booking per need inside its window. The BRP backend does not yet hold manager calendars, duty hours or the leave roster: mark availability UNVERIFIED and name the barracks manager from the installation record."
+        }
+      ]
+    }
+  ],
+  "schedule": {
+    "type": "cron",
+    "expression": "0 7,13 * * 1-5",
+    "timezone": "America/Chicago"
+  },
+  "budget": {
+    "type": "limit",
+    "max_list_cost": {
+      "amount": "300",
+      "currency": "USD"
+    }
+  },
+  "metadata": {
+    "brp_agent": "inspection_scheduler",
+    "brp_readiness": "2",
+    "brp_mode": "shadow",
+    "brp_pack": "de47fe60a7f9"
+  }
+}
+
+--- [15] Agent create room_readiness
+POST https://api.anthropic.com/v1/agents?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "name": "BRP Room Readiness Planner (shadow)",
+  "description": "Shadow mode. Ranks vacant rooms to fill next and proposes a 2-week plan that returns the most rooms to habitable within technician hours and parts on hand.",
+  "model": "claude-opus-5-5",
+  "system": "<22573 chars from the agent definition; first line: You are the BRP Room Readiness Planner agent for the Barracks Readiness Program (BRP). SAM...>",
+  "mcp_servers": [
+    {
+      "type": "url",
+      "name": "brp",
+      "url": "https://<project-ref>.supabase.co/functions/v1/agent-mcp/room_readiness"
+    }
+  ],
+  "tools": [
+    {
+      "type": "agent_toolset_20260401",
+      "default_config": {
+        "permission_policy": {
+          "type": "always_ask"
+        }
+      },
+      "configs": [
+        {
+          "name": "bash",
+          "enabled": false
+        },
+        {
+          "name": "write",
+          "enabled": false
+        },
+        {
+          "name": "edit",
+          "enabled": false
+        },
+        {
+          "name": "web_fetch",
+          "enabled": false
+        },
+        {
+          "name": "web_search",
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "type": "mcp_toolset",
+      "mcp_server_name": "brp",
+      "default_config": {
+        "permission_policy": {
+          "type": "always_ask"
+        }
+      },
+      "configs": [
+        {
+          "name": "brp_begin_run",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        },
+        {
+          "name": "brp_read",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        },
+        {
+          "name": "brp_propose",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        },
+        {
+          "name": "brp_end_run",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "brp_agent": "room_readiness",
+    "brp_readiness": "2",
+    "brp_mode": "shadow",
+    "brp_pack": "de47fe60a7f9"
+  }
+}
+
+--- [16] Deployment create room_readiness
+POST https://api.anthropic.com/v1/deployments?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "name": "BRP Room Readiness Planner (shadow)",
+  "description": "Shadow mode. Ranks vacant rooms to fill next and proposes a 2-week plan that returns the most rooms to habitable within technician hours and parts on hand. Schedule: 6:30 AM Central on Monday and Thursday (2 runs a week).",
+  "agent": {
+    "type": "agent",
+    "id": "<agent_id_11>",
+    "version": 1
+  },
+  "environment_id": "<environment_id_1>",
+  "vault_ids": [
+    "<vault_id_2>"
+  ],
+  "initial_events": [
+    {
+      "type": "user.message",
+      "content": [
+        {
+          "type": "text",
+          "text": "Scheduled shadow run for the Room Readiness Planner. For each installation you are on for, list vacant rooms, decide which are ready now (vacant, no open work order, nothing in the sensor values that makes them unfit), and propose one readiness_plan for the next 14 days. The BRP backend does not yet hold technician hours per day or work order hour estimates: state what you assumed as UNVERIFIED, or list the rooms as not_planned with that reason."
+        }
+      ]
+    }
+  ],
+  "schedule": {
+    "type": "cron",
+    "expression": "30 6 * * 1,4",
+    "timezone": "America/Chicago"
+  },
+  "budget": {
+    "type": "limit",
+    "max_list_cost": {
+      "amount": "500",
+      "currency": "USD"
+    }
+  },
+  "metadata": {
+    "brp_agent": "room_readiness",
+    "brp_readiness": "2",
+    "brp_mode": "shadow",
+    "brp_pack": "de47fe60a7f9"
+  }
+}
+
+--- [17] Agent create sensor_watch
+POST https://api.anthropic.com/v1/agents?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "name": "BRP Sensor Watch (shadow)",
+  "description": "Shadow mode. Reviews the latest room sensor readings and rooms on watch; proposes sensor work orders, on-call pages, false-alarm dismissals and sensor maintenance with the readings as evidence.",
+  "model": "claude-sonnet-5-5",
+  "system": "<23244 chars from the agent definition; first line: You are the BRP Sensor Watch agent for the Barracks Readiness Program (BRP). SAMPLE DATA: ...>",
+  "mcp_servers": [
+    {
+      "type": "url",
+      "name": "brp",
+      "url": "https://<project-ref>.supabase.co/functions/v1/agent-mcp/sensor_watch"
+    }
+  ],
+  "tools": [
+    {
+      "type": "agent_toolset_20260401",
+      "default_config": {
+        "permission_policy": {
+          "type": "always_ask"
+        }
+      },
+      "configs": [
+        {
+          "name": "bash",
+          "enabled": false
+        },
+        {
+          "name": "write",
+          "enabled": false
+        },
+        {
+          "name": "edit",
+          "enabled": false
+        },
+        {
+          "name": "web_fetch",
+          "enabled": false
+        },
+        {
+          "name": "web_search",
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "type": "mcp_toolset",
+      "mcp_server_name": "brp",
+      "default_config": {
+        "permission_policy": {
+          "type": "always_ask"
+        }
+      },
+      "configs": [
+        {
+          "name": "brp_begin_run",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        },
+        {
+          "name": "brp_read",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        },
+        {
+          "name": "brp_propose",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        },
+        {
+          "name": "brp_end_run",
+          "enabled": true,
+          "permission_policy": {
+            "type": "always_allow"
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "brp_agent": "sensor_watch",
+    "brp_readiness": "2",
+    "brp_mode": "shadow",
+    "brp_pack": "de47fe60a7f9"
+  }
+}
+
+--- [18] Deployment create sensor_watch
+POST https://api.anthropic.com/v1/deployments?beta=true
+x-api-key: <redacted: $ANTHROPIC_API_KEY>
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
+content-type: application/json
+{
+  "name": "BRP Sensor Watch (shadow)",
+  "description": "Shadow mode. Reviews the latest room sensor readings and rooms on watch; proposes sensor work orders, on-call pages, false-alarm dismissals and sensor maintenance with the readings as evidence. Schedule: Every hour at quarter past, every day (24 runs a day).",
+  "agent": {
+    "type": "agent",
+    "id": "<agent_id_13>",
+    "version": 1
+  },
+  "environment_id": "<environment_id_1>",
+  "vault_ids": [
+    "<vault_id_2>"
+  ],
+  "initial_events": [
+    {
+      "type": "user.message",
+      "content": [
+        {
+          "type": "text",
+          "text": "Scheduled shadow run for Sensor Watch. Read every room with a sensor (sensor_id not null) at your installations, and rooms in watch, action or offline status. Compare the latest readings with the Sensor Watch rules. Propose pages for life safety first, then sensor work orders, then sensor maintenance for rooms whose sensor is offline, low on battery or stale (sensor_read_at more than 1 hour old). The BRP backend holds the latest reading per room, not the 5-minute history: say so when a rule needs history."
+        }
+      ]
+    }
+  ],
+  "schedule": {
+    "type": "cron",
+    "expression": "15 * * * *",
+    "timezone": "America/Chicago"
+  },
+  "budget": {
+    "type": "limit",
+    "max_list_cost": {
+      "amount": "100",
+      "currency": "USD"
+    }
+  },
+  "metadata": {
+    "brp_agent": "sensor_watch",
+    "brp_readiness": "2",
+    "brp_mode": "shadow",
+    "brp_pack": "de47fe60a7f9"
+  }
+}
+
+DRY RUN complete: 18 requests printed, none sent.

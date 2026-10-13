@@ -30,3 +30,7 @@ verify_jwt = true
 
 [functions.admin-reset]
 verify_jwt = true
+
+# The agents authenticate with their own bearer token (checked in the function), not a Supabase JWT.
+[functions.agent-mcp]
+verify_jwt = false
