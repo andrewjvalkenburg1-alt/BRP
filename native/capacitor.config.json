@@ -1,0 +1,36 @@
+{
+  "appId": "com.rynocsolutions.brpone",
+  "appName": "BRP One",
+  "webDir": "www",
+  "backgroundColor": "#0F0F0F",
+  "loggingBehavior": "debug",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#0F0F0F",
+    "scheme": "BRP One",
+    "limitsNavigationsToAppBoundDomains": false,
+    "preferredContentMode": "mobile"
+  },
+  "android": {
+    "backgroundColor": "#0F0F0F",
+    "allowMixedContent": false
+  },
+  "server": {
+    "iosScheme": "capacitor",
+    "androidScheme": "https",
+    "hostname": "localhost"
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "LocalNotifications": {
+      "iconColor": "#FF5A1F"
+    },
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "DARK",
+      "backgroundColor": "#0F0F0F"
+    }
+  }
+}

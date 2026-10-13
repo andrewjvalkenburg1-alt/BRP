@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BRP One</string>
+    <string name="title_activity_main">BRP One</string>
+    <string name="package_name">com.rynocsolutions.brpone</string>
+    <string name="custom_url_scheme">com.rynocsolutions.brpone</string>
+</resources>

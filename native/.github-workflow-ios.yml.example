@@ -1,0 +1,68 @@
+# BRP One: build an unsigned iOS archive on a GitHub macOS runner, to prove the Xcode project compiles.
+#
+# NOT ACTIVE. GitHub only runs files inside .github/workflows/. To turn it on:
+#   mkdir -p .github/workflows && cp native/.github-workflow-ios.yml.example .github/workflows/ios-build.yml
+# It runs only when started by hand (Actions tab > "iOS build check" > Run workflow), never on push,
+# so the public repo does not spend macOS minutes on every commit.
+#
+# The archive is unsigned. It cannot be installed or uploaded; signing happens in Xcode on the Mac
+# (see native/APP-STORE.md). The web files come from the repo root (the published PWA build).
+
+name: iOS build check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ios-archive:
+    runs-on: macos-15
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: native
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: native/package-lock.json
+
+      - name: Pick the newest Xcode on the runner
+        run: |
+          ls -d /Applications/Xcode*.app
+          sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          xcodebuild -version
+
+      - name: Install packages
+        run: npm ci
+
+      - name: Copy the web build and sync Capacitor
+        env:
+          BRP_WEB_SRC: ${{ github.workspace }}
+        run: npm run sync -- ios
+
+      - name: Archive (unsigned)
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/BRPOne.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            archive | tee "$RUNNER_TEMP/xcodebuild.log" | grep -E "error:|warning: .*deprecated|ARCHIVE (SUCCEEDED|FAILED)" || true
+          test -d "$RUNNER_TEMP/BRPOne.xcarchive/Products/Applications/App.app"
+          echo "Archive built."
+
+      - name: Keep the build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: ${{ runner.temp }}/xcodebuild.log
+          retention-days: 7

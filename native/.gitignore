@@ -1,0 +1,17 @@
+node_modules/
+www/
+ios/App/App/public/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+ios/App/build/
+ios/DerivedData/
+ios/App/App.xcodeproj/xcuserdata/
+ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
+android/app/src/main/assets/public/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.xcarchive
+.DS_Store
+android/.kotlin/
