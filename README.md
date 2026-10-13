@@ -1,5 +1,6 @@
-# BRP One (demo)
+# BRP One and BRP website (demo)
 
-Barracks Readiness Program demo app. Sample data only. Operated by Rynoc Solutions. Legal pages are drafts for attorney review.
+Barracks Readiness Program demo. Sample data only. Operated by Rynoc Solutions. Legal pages are drafts for attorney review.
 
-Open the GitHub Pages link in Safari on iPad or iPhone, tap Share, then Add to Home Screen.
+- App: https://andrewjvalkenburg1-alt.github.io/BRP/ (Safari, Share, Add to Home Screen)
+- Website: https://andrewjvalkenburg1-alt.github.io/BRP/site/
