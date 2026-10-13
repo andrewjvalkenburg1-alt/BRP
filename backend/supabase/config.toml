@@ -1,0 +1,32 @@
+# Supabase CLI config for the BRP One backend. Used by `supabase link`, `db push` and `functions deploy`.
+# Settings under [auth] apply to a local Supabase stack; on the hosted project set them in the dashboard (see BACKEND.md).
+project_id = "brp-one"
+
+[api]
+enabled = true
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 5000
+
+[db]
+port = 54322
+major_version = 15
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed/seed.sql"]
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+enable_signup = false
+
+[auth.email]
+enable_signup = false
+enable_confirmations = false
+
+[functions.notify]
+verify_jwt = true
+
+[functions.admin-reset]
+verify_jwt = true

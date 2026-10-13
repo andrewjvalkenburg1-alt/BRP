@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BRP Admin Console</title>
+<meta name="description" content="BRP One admin console: users and roles, sites and rooms, work orders, purchasing, alerts, email outbox, audit log and demo reset. Sample data.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&family=Archivo:wght@400;600&family=Archivo+Narrow:wght@600&display=swap">
+<style>
+/* Tokens copied from apps/back-office.html (Package A Bone and Ink, Signal Orange for action only). */
+:root{--bone:#E4DFD5;--bone2:#D8D2C5;--field:#EFEBE3;--ink:#141414;--ink2:#4A4740;--rule:#B9B2A5;--sig:#D9431A;--sigk:#FF5A1F;--k0:#0F0F0F;--k1:#1C1C1B;--k2:#262624;--kt:#ECE8DF;--kt2:#A8A398;--krule:rgba(236,232,223,.16);--ok:#2E6B3A;--watch:#B88600;--act:#A61B1B;--off:#6B6760;--fd:"Big Shoulders Display","Arial Narrow",Arial,sans-serif;--fb:Archivo,Arial,system-ui,sans-serif;--fl:"Archivo Narrow","Arial Narrow",Arial,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bone);color:var(--ink);font:400 15px/1.5 var(--fb);-webkit-text-size-adjust:100%;font-variant-numeric:tabular-nums;overflow-x:hidden}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--sig);outline-offset:2px}
+h1,h2,h3{text-wrap:balance;margin:0}
+.lbl{font:600 12px/1.3 var(--fl);letter-spacing:.12em;text-transform:uppercase;color:var(--ink2)}
+.muted{color:var(--ink2)}
+.small{font-size:13.5px}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.wm{display:inline-flex;align-items:center;gap:10px;font:800 22px/1 var(--fd);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap}
+.wm i{width:.72em;height:.72em;background:var(--sigk);display:inline-block;flex:none}
+.btn{min-height:44px;padding:10px 16px;border:1px solid var(--ink);background:transparent;border-radius:0;font:600 13px/1.1 var(--fl);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{background:var(--bone2)}
+.btn.pri{background:var(--sig);border-color:var(--sig);color:#fff}
+.btn.pri:hover{background:#B83814}
+.btn.danger{border-color:var(--act);color:var(--act)}
+.btn.danger:hover{background:var(--act);color:#fff}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.in{width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--rule);border-radius:0;background:var(--field)}
+.in:focus{border-color:var(--ink)}
+.dot{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.dot::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--off);flex:none}
+.dot.ok::before{background:var(--ok)}.dot.watch::before{background:var(--watch)}.dot.action::before,.dot.act::before{background:var(--act)}.dot.off::before{background:var(--off)}
+
+/* ---------- gate (dark) ---------- */
+#gate{min-height:100vh;min-height:100dvh;background:var(--k0);color:var(--kt);display:grid;align-content:center;padding:32px 16px}
+.g-wrap{width:100%;max-width:1080px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:48px;align-items:end}
+.g-top{display:flex;justify-content:space-between;align-items:center;gap:12px;max-width:1080px;width:100%;margin:0 auto 40px}
+.g-chip{font:600 12px/1 var(--fl);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--krule);padding:8px 10px;color:var(--kt)}
+.g-rule{width:56px;height:5px;background:var(--sigk);margin-bottom:20px}
+.g-hero h1{font:800 clamp(3.2rem,8vw,7rem)/.88 var(--fd);text-transform:uppercase;letter-spacing:-.01em}
+.g-hero p{margin:20px 0 0;max-width:44ch;font-size:17px;color:var(--kt)}
+.g-meta{font:600 12px/1.4 var(--fl);letter-spacing:.12em;text-transform:uppercase;color:var(--kt2)!important;font-size:12px!important}
+.g-card{background:var(--k1);border:1px solid var(--krule);border-top:5px solid var(--sigk);padding:28px 24px;display:grid;gap:16px}
+.g-card h2{font:800 30px/.95 var(--fd);text-transform:uppercase}
+.g-card p{margin:0}
+.g-note{font-size:14px;color:var(--kt2)}
+.g-field{display:grid;gap:6px}
+.g-field label{font:600 12px/1.3 var(--fl);letter-spacing:.12em;text-transform:uppercase;color:var(--kt2)}
+.g-in{width:100%;min-height:48px;padding:10px 12px;border:1px solid rgba(236,232,223,.32);border-radius:0;background:var(--k0);color:var(--kt);font-size:16px}
+.g-in:focus{border-color:var(--sigk)}
+.g-btn{min-height:48px;padding:10px 16px;border:1px solid var(--sigk);background:var(--sigk);color:var(--k0);font:600 14px/1 var(--fl);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;border-radius:0}
+.g-err{border-left:4px solid #E26A5E;background:rgba(226,106,94,.12);padding:10px 12px;font-size:14px}
+.g-err:empty{display:none}
+.g-mode{border-left:4px solid var(--sigk);background:rgba(255,90,31,.1);padding:10px 12px;font-size:14px}
+.g-accts summary{cursor:pointer;font:600 12px/1.3 var(--fl);letter-spacing:.12em;text-transform:uppercase;color:var(--kt2);min-height:44px;display:flex;align-items:center}
+.g-accts ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px}
+.g-accts button{width:100%;text-align:left;min-height:44px;padding:8px 10px;border:1px solid var(--krule);background:transparent;color:var(--kt);cursor:pointer;display:flex;justify-content:space-between;gap:8px;border-radius:0}
+.g-accts button:hover{border-color:var(--kt2)}
+.g-accts button span{color:var(--kt2);font:600 11px/1.6 var(--fl);letter-spacing:.1em;text-transform:uppercase}
+.g-accts code{color:var(--kt)}
+@media (max-width:820px){.g-wrap{grid-template-columns:1fr;gap:28px}.g-top{margin-bottom:24px}}
+
+/* ---------- app ---------- */
+.top{background:var(--ink);color:var(--kt);position:sticky;top:0;z-index:20}
+.top-in{max-width:1440px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.top .wm{font-size:20px}
+.top .wm i{background:var(--sig)}
+.top .who{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.top .who .u{font-size:14px}
+.top .btn{border-color:var(--krule);color:var(--kt);min-height:40px}
+.top .btn:hover{background:var(--k2)}
+.mode{font:600 11px/1 var(--fl);letter-spacing:.12em;text-transform:uppercase;padding:7px 9px;border:1px solid var(--sigk);color:var(--sigk)}
+.mode.live{border-color:#7FBF8E;color:#7FBF8E}
+.tabs{background:var(--k1);border-top:1px solid var(--krule)}
+.tabs-in{max-width:1440px;margin:0 auto;padding:0 16px;display:flex;overflow-x:auto;scrollbar-width:thin}
+.tabs button{flex:none;min-height:44px;padding:0 14px;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--kt2);font:600 12px/1 var(--fl);letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--kt);border-bottom-color:var(--sig)}
+.tabs button:hover{color:var(--kt)}
+.banner{max-width:1440px;margin:0 auto;padding:10px 24px;font-size:14px;display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid var(--rule);background:var(--field)}
+.banner b{font:600 12px/1.6 var(--fl);letter-spacing:.12em;text-transform:uppercase;color:var(--sig);flex:none}
+main{max-width:1440px;margin:0 auto;padding:24px 24px 64px}
+.head{display:grid;gap:6px;margin-bottom:18px}
+.head .rule{width:40px;height:4px;background:var(--sig)}
+.head h1{font:800 clamp(2rem,4.5vw,3.2rem)/.95 var(--fd);text-transform:uppercase}
+.head p{margin:0;max-width:80ch}
+.panel{background:var(--field);border:1px solid var(--rule);margin-bottom:20px}
+.panel-h{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--rule)}
+.panel-h h2{font:800 22px/1 var(--fd);text-transform:uppercase}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--rule)}
+.tools .in{width:auto;flex:1 1 220px;min-width:0}
+.tools select.in{flex:0 1 200px}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+th{font:600 11.5px/1.2 var(--fl);letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);background:var(--bone2);white-space:nowrap;position:sticky;top:0}
+td{padding:9px 12px;border-bottom:1px solid rgba(74,71,64,.16);vertical-align:top;white-space:nowrap}
+td.n,th.n{text-align:right}
+td .wrap{max-width:46ch;min-width:22ch;white-space:normal}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--bone)}
+td .act{min-height:36px;padding:6px 10px;font-size:11.5px}
+.more{padding:12px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--field);border:1px solid var(--rule);padding:14px;display:grid;gap:4px;text-align:left;cursor:pointer;min-height:44px;border-radius:0}
+.card:hover{border-color:var(--ink)}
+.card b{font:800 34px/1 var(--fd)}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.split .panel{margin:0}
+.pb{padding:14px;display:grid;gap:12px}
+.pb p{margin:0}
+.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 14px;font-size:14px}
+.kv dt{font:600 11.5px/1.6 var(--fl);letter-spacing:.1em;text-transform:uppercase;color:var(--ink2)}
+.kv dd{margin:0;overflow-wrap:anywhere}
+.tag{display:inline-block;font:600 11px/1 var(--fl);letter-spacing:.08em;text-transform:uppercase;padding:4px 6px;border:1px solid var(--rule);white-space:nowrap}
+.tag.crit{border-color:var(--act);color:var(--act)}
+.tag.high{border-color:var(--watch);color:#7A5A00}
+pre.mail{white-space:pre-wrap;font:400 13.5px/1.5 var(--fb);background:var(--bone);border:1px solid var(--rule);padding:12px;margin:0;max-height:50vh;overflow:auto}
+dialog{border:1px solid var(--ink);border-top:5px solid var(--sig);padding:0;max-width:min(560px,calc(100vw - 32px));width:100%;background:var(--field);color:var(--ink);border-radius:0}
+dialog::backdrop{background:rgba(15,15,15,.55)}
+dialog form{display:grid;gap:14px;padding:20px}
+dialog h2{font:800 26px/1 var(--fd);text-transform:uppercase}
+.field{display:grid;gap:6px}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.check{display:flex;gap:10px;align-items:center;min-height:44px}
+.check input{width:20px;height:20px;accent-color:var(--sig)}
+.err{color:var(--act);font-size:14px}
+.err:empty{display:none}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--kt);padding:12px 16px;font-size:14px;max-width:calc(100vw - 32px);z-index:50;border-left:4px solid var(--sig)}
+.foot{max-width:1440px;margin:0 auto;padding:0 24px 32px;font-size:13px;color:var(--ink2)}
+@media (max-width:900px){.split{grid-template-columns:1fr}}
+@media (max-width:600px){
+  .top-in{padding:10px 16px;gap:10px}
+  .top .who{margin-left:0;width:100%;justify-content:space-between}
+  main{padding:18px 16px 56px}
+  .banner{padding:10px 16px;flex-direction:column;gap:2px}
+  .foot{padding:0 16px 24px}
+  .tools .in,.tools select.in{flex:1 1 100%}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+</style>
+</head>
+<body>
+
+<!-- ---------- sign in ---------- -->
+<div id="gate">
+  <div class="g-top"><span class="wm"><i aria-hidden="true"></i>BRP</span><span class="g-chip" id="g-chip">Sample data</span></div>
+  <div class="g-wrap">
+    <section class="g-hero" aria-labelledby="g-h">
+      <div class="g-rule" aria-hidden="true"></div>
+      <h1 id="g-h">Admin<br>console</h1>
+      <p>Users and roles, sites and rooms, work orders, purchasing, alerts, the email outbox and the audit log for BRP One. Admin accounts only.</p>
+      <p class="g-meta">Barracks Readiness Program · Version 1 · Sample data</p>
+    </section>
+    <form class="g-card" id="g-form" novalidate aria-labelledby="g-title">
+      <h2 id="g-title">Admin sign in</h2>
+      <p class="g-mode" id="g-mode"></p>
+      <div class="g-err" id="g-err" role="alert" aria-live="assertive"></div>
+      <div class="g-field"><label for="g-email">Email</label><input class="g-in" id="g-email" type="email" autocomplete="username" spellcheck="false" autocapitalize="off" required></div>
+      <div class="g-field"><label for="g-pw">Password</label><input class="g-in" id="g-pw" type="password" autocomplete="current-password" required></div>
+      <button class="g-btn" type="submit" id="g-submit">Sign in</button>
+      <details class="g-accts" id="g-accts"><summary>Demo accounts</summary>
+        <p class="g-note">Every demo account uses the password <code>BRPdemo2026!</code>. Only the Admin account can open this console; the others show the refusal.</p>
+        <ul id="g-list"></ul>
+      </details>
+    </form>
+  </div>
+</div>
+
+<!-- ---------- console ---------- -->
+<div id="app" hidden>
+  <header class="top">
+    <div class="top-in">
+      <span class="wm"><i aria-hidden="true"></i>BRP Admin</span>
+      <span class="mode" id="mode-chip"></span>
+      <div class="who"><span class="u" id="who"></span><button class="btn" type="button" id="signout">Sign out</button></div>
+    </div>
+    <nav class="tabs" aria-label="Admin sections"><div class="tabs-in" role="tablist" id="tabs"></div></nav>
+  </header>
+  <div class="banner" id="banner"></div>
+  <main id="main" tabindex="-1"></main>
+  <p class="foot">Sample data. Nothing here happened. This demo backend is not accredited for Army data; production needs a FedRAMP or DoD IL4/IL5 environment.</p>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlg-h"><form method="dialog" id="dlg-form"></form></dialog>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="brp-config.js"></script>
+<script src="brp-backend.js"></script>
+<script src="demo-data.js"></script>
+<script>
+(function () {
+'use strict';
+var BE = window.BRPBackend, DEMO = window.BRP_ADMIN_DEMO || { tables: {}, password: 'BRPdemo2026!', generated: 'none' };
+var LOCAL = !(BE && BE.configured());
+var ROLES = [['soldier', 'Soldier'], ['technician', 'Technician'], ['barracks_manager', 'Barracks manager'], ['site_lead', 'Site lead'], ['program_manager', 'Program manager'],
+  ['buyer', 'Buyer'], ['cor', 'Government COR'], ['commander', 'Garrison commander'], ['admin', 'Admin']];
+var RL = {}; ROLES.forEach(function (r) { RL[r[0]] = r[1]; });
+var $ = function (id) { return document.getElementById(id); };
+var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+var money = function (n) { return n == null || n === '' ? '' : '$' + (+n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); };
+var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function fdt(t) {
+  if (!t) return '';
+  var d = new Date(t); if (isNaN(d)) return '';
+  try {
+    var p = {}; new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })
+      .formatToParts(d).forEach(function (x) { p[x.type] = x.value; });
+    return MON[+p.month - 1] + ' ' + p.day + ', ' + p.year + ' ' + p.hour + ':' + p.minute + ' ' + p.dayPeriod;
+  } catch (e) { return d.toISOString().slice(0, 16).replace('T', ' '); }
+}
+function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 3800); }
+
+/* =====================================================================
+   Data layer. LOCAL: browser-only copy of the seed (demo-data.js). REMOTE: BRPBackend + Supabase RLS.
+   ===================================================================== */
+var api = LOCAL ? localApi() : remoteApi();
+
+function localApi() {
+  var KEY = 'brp-admin-demo-v1', SKEY = 'brp-admin-session-v1', DB = null, me = null;
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function load() {
+    try { var s = localStorage.getItem(KEY); if (s) { var d = JSON.parse(s); if (d && d.v === DEMO.generated && d.t) return d.t; } } catch (e) { /* storage blocked */ }
+    return clone(DEMO.tables);
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ v: DEMO.generated, t: DB })); } catch (e) { /* storage blocked or full: keep in memory */ } }
+  function db() { if (!DB) DB = load(); return DB; }
+  function nowIso() { return new Date().toISOString(); }
+  function audit(action, table, rowId, oldRow, newRow) {
+    var a = db().audit_log; a.unshift({ id: (a.length ? a[0].id : 0) + 1, at: nowIso(), actor_id: me && me.id, actor_email: me && me.email, actor_role: me && me.role, action: action, table_name: table, row_id: rowId, old_row: oldRow, new_row: newRow });
+  }
+  function keyOf(table) { return { stock: 'cabinet_id', parts: 'sku', settings: 'key' }[table] || 'id'; }
+  return {
+    mode: 'local',
+    signIn: function (email, pw) {
+      email = String(email || '').trim().toLowerCase();
+      var p = db().profiles.filter(function (x) { return x.email === email; })[0];
+      if (!p || pw !== DEMO.password) return Promise.reject(new Error('That email and password do not match a demo account.'));
+      if (!p.active) return Promise.reject(new Error('This account is turned off. Reset the demo data to turn it back on.'));
+      me = p; try { sessionStorage.setItem(SKEY, p.email); } catch (e) { /* ok */ }
+      return Promise.resolve(p);
+    },
+    restore: function () {
+      var e = null; try { e = sessionStorage.getItem(SKEY); } catch (x) { /* ok */ }
+      me = e ? db().profiles.filter(function (x) { return x.email === e && x.active; })[0] || null : null;
+      return Promise.resolve(me);
+    },
+    signOut: function () { me = null; try { sessionStorage.removeItem(SKEY); } catch (e) { /* ok */ } return Promise.resolve(); },
+    list: function (t) { return Promise.resolve(clone(db()[t] || [])); },
+    update: function (t, id, patch) {
+      var k = keyOf(t), row = db()[t].filter(function (r) { return r[k] === id; })[0];
+      if (!row) return Promise.reject(new Error('Not found'));
+      var old = {}, nw = {};
+      Object.keys(patch).forEach(function (f) { if (row[f] !== patch[f]) { old[f] = row[f]; nw[f] = patch[f]; row[f] = patch[f]; } });
+      if (t === 'work_orders' && nw.status) row.closed_at = nw.status === 'closed' ? nowIso() : null;
+      if ('updated_at' in row) row.updated_at = nowIso();
+      if (t === 'purchase_list') row.updated_by = me.email;
+      if (Object.keys(nw).length) audit('update', t, id, old, nw);
+      save(); return Promise.resolve(clone(row));
+    },
+    insert: function (t, row) {
+      var rows = db()[t];
+      if (t === 'purchase_list') {
+        var n = rows.reduce(function (m, r) { var x = /^PL-(\d+)$/.exec(r.id); return x ? Math.max(m, +x[1]) : m; }, 0) + 1;
+        row = Object.assign({ id: 'PL-' + String(n).padStart(4, '0'), status: 'requested', source: 'manual', sample: false, created_at: nowIso(), updated_at: nowIso(),
+          requested_by: me.id, requested_by_name: me.full_name, updated_by: me.email }, row);
+      }
+      rows.unshift(row); audit('insert', t, row.id, null, row); save();
+      return Promise.resolve(clone(row));
+    },
+    setRole: function (id, role, inst, active) {
+      var P = db().profiles, p = P.filter(function (x) { return x.id === id; })[0];
+      if (!p) return Promise.reject(new Error('No user with that id'));
+      if (role === 'soldier' && !inst) return Promise.reject(new Error('A Soldier account needs an installation.'));
+      if (id === me.id && (role !== 'admin' || !active)) return Promise.reject(new Error('You cannot remove your own admin access. Ask another admin.'));
+      if (p.role === 'admin' && p.active && (role !== 'admin' || !active) && P.filter(function (x) { return x.role === 'admin' && x.active; }).length <= 1) return Promise.reject(new Error('Keep at least one active admin.'));
+      var old = { role: p.role, inst: p.inst, active: p.active };
+      p.role = role; p.inst = inst || null; p.active = !!active;
+      audit('role.change', 'profiles', id, old, { role: p.role, inst: p.inst, active: p.active }); save();
+      return Promise.resolve(clone(p));
+    },
+    notify: function (a) {
+      var D = db(), id = 'AL-' + String(D.alerts.reduce(function (m, x) { return Math.max(m, +x.id.slice(3) || 0); }, 0) + 1).padStart(4, '0');
+      var inst = a.inst || null, at = nowIso(), sev = a.severity || 'info';
+      if (!inst && a.ref) { var k = a.ref.split(':'); if (k[0] === 'wo') { var w = D.work_orders.filter(function (x) { return x.id === k[1]; })[0]; inst = w ? w.inst : null; } else if (/^(room|bldg|inst)$/.test(k[0])) inst = k[1].split('-')[0]; }
+      var seen = {}, rec = [];
+      function add(p) { if (p && p.active && !seen[p.email]) { seen[p.email] = 1; rec.push(p); } }
+      (a.tags || []).forEach(function (t) { D.profiles.forEach(function (p) { if ((t.email && p.email === t.email) || (!t.email && t.role === p.role && (!inst || !p.inst || p.inst === inst))) add(p); }); });
+      D.profiles.forEach(function (p) { if ((inst && p.inst === inst && (p.role === 'site_lead' || p.role === 'barracks_manager')) || (sev === 'critical' && p.role === 'program_manager')) add(p); });
+      var al = { id: id, at: at, type: a.type || 'custom', severity: sev, title: a.title, body: a.body || '', inst: inst, ref: a.ref || null, tags: [a.ref, inst && 'inst:' + inst].filter(Boolean), created_by: me.id, created_by_name: me.full_name, sample: false };
+      D.alerts.unshift(al);
+      var rid = D.alert_recipients.reduce(function (m, x) { return Math.max(m, x.id); }, 0), oid = D.email_outbox.reduce(function (m, x) { return Math.max(m, x.id); }, 0);
+      rec.forEach(function (p) {
+        D.alert_recipients.push({ id: ++rid, alert_id: id, profile_id: p.id, email: p.email, name: p.full_name, role: RL[p.role], read_at: null, push_status: 'not_configured' });
+        D.email_outbox.unshift({ id: ++oid, alert_id: id, inst: inst, to_email: p.email, to_name: p.full_name, to_role: RL[p.role], subject: '[BRP ' + sev.toUpperCase() + '] ' + al.title,
+          body: al.title + '\n\n' + (al.body || '(no detail)') + (al.ref ? '\n\nRecord: ' + al.ref : '') + (inst ? '\nInstallation: ' + inst : '') + '\nRaised by: ' + me.full_name + ' (Admin)\n\nSent by BRP One. Sample data.',
+          status: 'logged', provider: 'none', provider_message_id: null, error: null, created_at: at, sent_at: null });
+      });
+      save();
+      return Promise.resolve({ id: id, tagged: rec.map(function (p) { return { role: RL[p.role], name: p.full_name, email: p.email }; }) });
+    },
+    reset: function () {
+      var keep = db().audit_log, people = db().profiles.filter(function (p) { return !p.demo; });
+      DB = clone(DEMO.tables); DB.profiles = DB.profiles.concat(people); DB.audit_log = keep;
+      audit('demo.reset', null, null, null, { work_orders: DB.work_orders.length, purchase_orders: DB.purchase_orders.length });
+      save();
+      me = DB.profiles.filter(function (x) { return x.email === me.email; })[0] || me;
+      return Promise.resolve({ ok: true });
+    },
+    settings: function () { return Promise.resolve([{ key: 'email_delivery', value: { enabled: false } }, { key: 'demo_mode', value: { enabled: true } }]); }
+  };
+}
+
+function remoteApi() {
+  var me = null;
+  function key(t) { return { stock: 'cabinet_id', parts: 'sku', settings: 'key' }[t] || 'id'; }
+  var ORDER = { profiles: ['email'], installations: ['id'], buildings: ['id'], rooms: ['id'], work_orders: ['created_at', false], purchase_orders: ['issued_at', false],
+    purchase_list: ['id'], email_outbox: ['created_at', false], alerts: ['at', false], alert_recipients: ['id'], satisfaction: ['at', false], parts: ['sku'],
+    catalog_items: ['id'], stock: ['cabinet_id'], vendors: ['id'] };
+  function toMe(p) { return p ? { id: p.id, email: p.email, full_name: p.name, role: p.role, inst: p.inst, active: p.active, demo: p.demo } : null; }
+  return {
+    mode: 'remote',
+    signIn: function (email, pw) { return BE.signIn(email, pw).then(function (r) { me = toMe(r.profile); return me; }); },
+    restore: function () { return BE.whoami(true).then(function (p) { me = p && p.active ? toMe(p) : null; return me; }); },
+    signOut: function () { me = null; return BE.signOut(); },
+    list: function (t) {
+      if (t === 'audit_log') return BE.admin.auditLog().then(function (r) { return r || []; });
+      return BE.admin.table(t, ORDER[t]).then(function (r) { return r || []; });
+    },
+    update: function (t, id, patch) {
+      return BE.from(t).update(patch).eq(key(t), id).select().then(function (r) {
+        if (r.error) throw new Error(r.error.message);
+        if (!r.data || !r.data.length) throw new Error('The server did not change that row. Your role may not allow it.');
+        return r.data[0];
+      });
+    },
+    insert: function (t, row) { return BE.from(t).insert(row).select().then(function (r) { if (r.error) throw new Error(r.error.message); return r.data && r.data[0]; }); },
+    setRole: function (id, role, inst, active) { return BE.admin.setRole(id, role, inst, active); },
+    notify: function (a) { return BE.notify(a); },
+    reset: function () { return BE.admin.resetDemo(); },
+    settings: function () { return BE.admin.settings(); }
+  };
+}
+
+/* =====================================================================
+   Sign in gate
+   ===================================================================== */
+var ME = null;
+var ACCTS = [['admin@brp.demo', 'Admin'], ['soldier@brp.demo', 'Soldier'], ['tech@brp.demo', 'Technician'], ['manager@brp.demo', 'Barracks manager'], ['sitelead@brp.demo', 'Site lead'],
+  ['pm@brp.demo', 'Program manager'], ['buyer@brp.demo', 'Buyer'], ['cor@brp.demo', 'Government COR'], ['commander@brp.demo', 'Garrison commander']];
+$('g-mode').innerHTML = LOCAL
+  ? '<b>Local demo mode.</b> No server is configured, so this console runs on sample data kept in this browser. Changes stay on this device.'
+  : '<b>Server mode.</b> Signed in against the BRP backend. Your role is checked on the server.';
+$('g-chip').textContent = LOCAL ? 'Local demo mode · Sample data' : 'Server · Sample data';
+$('g-list').innerHTML = ACCTS.map(function (a) { return '<li><button type="button" data-email="' + a[0] + '"><code>' + a[0] + '</code><span>' + a[1] + '</span></button></li>'; }).join('');
+$('g-list').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-email]'); if (!b) return;
+  $('g-email').value = b.getAttribute('data-email'); $('g-pw').value = DEMO.password || 'BRPdemo2026!'; $('g-form').requestSubmit();
+});
+$('g-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var em = $('g-email').value, pw = $('g-pw').value, err = $('g-err');
+  err.textContent = '';
+  if (!em || !pw) { err.textContent = 'Enter your email and password.'; return; }
+  $('g-submit').disabled = true;
+  api.signIn(em, pw).then(function (p) {
+    if (!p || p.role !== 'admin') {
+      var label = p ? RL[p.role] || p.role : 'unknown';
+      return api.signOut().then(function () {
+        err.textContent = 'Refused. This console is for the Admin role only. ' + (p ? p.email : em) + ' is a ' + label + ' account. Sign in with an Admin account.';
+      });
+    }
+    ME = p; $('g-pw').value = ''; openApp();
+  }).catch(function (x) { err.textContent = (x && x.message) || 'Sign in failed.'; })
+    .then(function () { $('g-submit').disabled = false; });
+});
+
+/* =====================================================================
+   Console
+   ===================================================================== */
+var TABS = [['overview', 'Overview'], ['users', 'Users and roles'], ['sites', 'Sites'], ['rooms', 'Rooms'], ['wo', 'Work orders'], ['parts', 'Parts and catalog'],
+  ['stock', 'Stock'], ['po', 'Purchase orders'], ['plist', 'Purchase list'], ['csat', 'Satisfaction'], ['alerts', 'Alerts'], ['outbox', 'Email outbox'], ['audit', 'Audit log']];
+var cur = 'overview', CACHE = {}, VIEW = {}, INSTS = [];
+try { var saved = localStorage.getItem('brp-admin-tab'); if (saved && TABS.some(function (t) { return t[0] === saved; })) cur = saved; } catch (e) { /* ok */ }
+
+function openApp() {
+  $('gate').hidden = true; $('app').hidden = false;
+  $('who').textContent = ME.full_name + ' · ' + ME.email;
+  $('mode-chip').textContent = LOCAL ? 'Local demo mode' : 'Server';
+  $('mode-chip').className = 'mode' + (LOCAL ? '' : ' live');
+  $('banner').innerHTML = LOCAL
+    ? '<b>Local demo mode</b><span>No backend is configured. This console works on sample data stored in this browser only. Email is never sent. To use the server, fill in brp-config.js (see BACKEND.md).</span>'
+    : '<b>Sample data</b><span>Connected to the BRP backend. Every change is checked by row-level security and written to the audit log. Email delivery is off unless an admin turns it on.</span>';
+  $('tabs').innerHTML = TABS.map(function (t) { return '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="' + (t[0] === cur) + '">' + t[1] + '</button>'; }).join('');
+  CACHE = {};
+  api.list('installations').then(function (r) { INSTS = r; render(); }).catch(fail);
+}
+$('tabs').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-tab]'); if (!b) return;
+  cur = b.getAttribute('data-tab');
+  try { localStorage.setItem('brp-admin-tab', cur); } catch (x) { /* ok */ }
+  Array.prototype.forEach.call($('tabs').children, function (x) { x.setAttribute('aria-selected', x === b); });
+  render(); $('main').focus({ preventScroll: true });
+});
+$('signout').addEventListener('click', function () {
+  api.signOut().then(function () { ME = null; $('app').hidden = true; $('gate').hidden = false; $('g-err').textContent = ''; $('g-email').focus(); });
+});
+function fail(e) { toast((e && e.message) || 'Something went wrong.'); }
+function get(t, fresh) {
+  if (!fresh && CACHE[t]) return Promise.resolve(CACHE[t]);
+  return api.list(t).then(function (r) { CACHE[t] = r; return r; });
+}
+function refresh(tables) { (tables || Object.keys(CACHE)).forEach(function (t) { delete CACHE[t]; }); render(); }
+
+function head(title, text) { return '<div class="head"><div class="rule" aria-hidden="true"></div><span class="lbl">Admin · Sample data</span><h1>' + esc(title) + '</h1>' + (text ? '<p class="muted">' + text + '</p>' : '') + '</div>'; }
+var instOpts = function (sel, allLabel) {
+  return '<option value="">' + esc(allLabel || 'All installations') + '</option>' + INSTS.filter(function (i) { return i.pilot; }).map(function (i) { return '<option value="' + esc(i.id) + '"' + (sel === i.id ? ' selected' : '') + '>' + esc(i.name) + ' (' + esc(i.id) + ')</option>'; }).join('');
+};
+
+/* Generic table panel: search box, installation filter, 50 rows at a time. */
+function tablePanel(key, title, rows, cols, opt) {
+  opt = opt || {};
+  var v = VIEW[key] = VIEW[key] || { q: '', inst: '', n: 50 };
+  var q = v.q.toLowerCase();
+  var list = rows.filter(function (r) {
+    if (v.inst && opt.inst !== false && r.inst !== v.inst) return false;
+    if (!q) return true;
+    return cols.some(function (c) { var x = c.t ? c.t(r) : r[c.k]; return x != null && String(x).toLowerCase().indexOf(q) >= 0; });
+  });
+  var shown = list.slice(0, v.n);
+  var h = '<section class="panel" data-panel="' + key + '"><div class="panel-h"><h2>' + esc(title) + '</h2><span class="small muted">' + list.length + ' of ' + rows.length + ' rows</span>' + (opt.actions || '') + '</div>' +
+    '<div class="tools"><label class="sr" for="q-' + key + '">Search ' + esc(title) + '</label><input class="in" type="search" id="q-' + key + '" data-q="' + key + '" placeholder="Search" value="' + esc(v.q) + '">' +
+    (opt.inst !== false ? '<label class="sr" for="i-' + key + '">Installation</label><select class="in" id="i-' + key + '" data-i="' + key + '">' + instOpts(v.inst) + '</select>' : '') + '</div>' +
+    '<div class="tw"><table><thead><tr>' + cols.map(function (c) { return '<th scope="col"' + (c.n ? ' class="n"' : '') + '>' + esc(c.l) + '</th>'; }).join('') + (opt.edit ? '<th scope="col"><span class="sr">Actions</span></th>' : '') + '</tr></thead><tbody>' +
+    (shown.length ? shown.map(function (r, i) {
+      return '<tr>' + cols.map(function (c) { var x = c.f ? c.f(r) : esc(r[c.k]); return '<td' + (c.n ? ' class="n"' : '') + '>' + (x == null ? '' : x) + '</td>'; }).join('') +
+        (opt.edit ? '<td><button class="btn act" type="button" data-edit="' + key + '" data-i="' + rows.indexOf(r) + '">' + esc(opt.editLabel || 'Edit') + '</button></td>' : '') + '</tr>';
+    }).join('') : '<tr><td colspan="' + (cols.length + (opt.edit ? 1 : 0)) + '" class="muted">No rows match.</td></tr>') +
+    '</tbody></table></div>' + (list.length > v.n ? '<div class="more"><button class="btn" type="button" data-more="' + key + '">Show 50 more</button></div>' : '') + '</section>';
+  PANELS[key] = { rows: rows, edit: opt.edit };
+  return h;
+}
+var PANELS = {};
+var dot = function (cls, text) { return '<span class="dot ' + cls + '">' + esc(text) + '</span>'; };
+var STAT_CLS = { ok: 'ok', watch: 'watch', action: 'act', offline: 'off', open: 'watch', in_progress: 'ok', waiting_parts: 'watch', closed: 'off',
+  requested: 'watch', issued: 'ok', shipped: 'ok', backordered: 'act', received: 'off', cancelled: 'off', approved: 'ok', ordered: 'ok', not_ordered: 'watch',
+  logged: 'watch', sent: 'ok', failed: 'act', suppressed: 'off', queued: 'watch' };
+var LBL = { ok: 'OK', watch: 'Watch', action: 'Action', offline: 'Offline', open: 'Open', in_progress: 'In progress', waiting_parts: 'Waiting on parts', closed: 'Closed',
+  requested: 'Requested', issued: 'Issued', shipped: 'Shipped', backordered: 'Backordered', received: 'Received', cancelled: 'Cancelled', approved: 'Approved', ordered: 'Ordered',
+  not_ordered: 'Not ordered', logged: 'Logged, not sent', sent: 'Sent', failed: 'Failed', suppressed: 'Suppressed', queued: 'Queued' };
+var st = function (s) { return dot(STAT_CLS[s] || 'off', LBL[s] || s); };
+
+/* ---------- views ---------- */
+var VIEWS = {
+  overview: function () {
+    return Promise.all(['profiles', 'rooms', 'work_orders', 'purchase_orders', 'purchase_list', 'email_outbox', 'alerts', 'audit_log', 'stock'].map(function (t) { return get(t); })).then(function (r) {
+      var openWo = r[2].filter(function (w) { return w.status !== 'closed'; }).length;
+      var low = r[8].filter(function (s) { return s.rop != null && s.qty < s.rop; }).length;
+      var card = function (tab, n, l) { return '<button class="card" type="button" data-go="' + tab + '"><span class="lbl">' + esc(l) + '</span><b>' + n + '</b></button>'; };
+      return head('Overview', 'Accounts, data and the demo controls. Every number is sample data.') +
+        '<div class="cards">' + card('users', r[0].length, 'Accounts') + card('rooms', r[1].length, 'Rooms') + card('wo', openWo, 'Open work orders') + card('po', r[3].length, 'Purchase orders') +
+        card('plist', r[4].length, 'Purchase list') + card('stock', low, 'Below reorder point') + card('alerts', r[6].length, 'Alerts') + card('outbox', r[5].length, 'Outbox rows') + card('audit', r[7].length, 'Audit entries') + '</div>' +
+        '<div class="split"><section class="panel"><div class="panel-h"><h2>Reset demo data</h2></div><div class="pb">' +
+        '<p>Reloads every work order, room, PO, stock count, purchase list item, alert and outbox row from the sample set, and puts the nine demo accounts back on their demo roles. Accounts that are not demo accounts and push tokens stay. The audit log keeps a record of the reset.</p>' +
+        '<div class="row" style="justify-content:flex-start"><button class="btn danger" type="button" id="reset">Reset demo data</button></div></div></section>' +
+        '<section class="panel"><div class="panel-h"><h2>Alerts and email</h2></div><div class="pb">' +
+        '<dl class="kv"><dt>Email delivery</dt><dd>' + dot('off', 'Off') + '<br>Alerts write one outbox row per tagged person. Nothing is sent.</dd>' +
+        '<dt>Demo addresses</dt><dd>@brp.demo addresses are never emailed, even with delivery on.</dd>' +
+        '<dt>Push</dt><dd>Sent to registered phones only when APNs or FCM keys are set on the server.</dd>' +
+        '<dt>Mode</dt><dd>' + (LOCAL ? 'Local demo mode. No server.' : 'Server. Row-level security on.') + '</dd></dl>' +
+        '<div class="row" style="justify-content:flex-start"><button class="btn" type="button" data-go="alerts">Send a test alert</button></div></div></section></div>';
+    });
+  },
+  users: function () {
+    return get('profiles').then(function (rows) {
+      return head('Users and roles', 'Change a role, installation or account status with Edit. A Soldier needs an installation. Leave installation empty for all installations. The demo Admin can change demo accounts only, and nobody can remove their own admin access.') +
+        tablePanel('users', 'Accounts', rows, [
+          { k: 'email', l: 'Email' }, { k: 'full_name', l: 'Name' }, { l: 'Role', t: function (r) { return RL[r.role]; }, f: function (r) { return esc(RL[r.role] || r.role); } },
+          { l: 'Installation', k: 'inst', f: function (r) { return esc(r.inst || 'All'); } }, { l: 'Home room', f: function (r) { return r.home_room ? esc(r.home_bldg + ' Rm ' + r.home_room) : ''; } },
+          { l: 'Status', f: function (r) { return r.active ? dot('ok', 'Active') : dot('off', 'Off'); } }, { l: 'Account', f: function (r) { return r.demo ? '<span class="tag">Demo</span>' : ''; } }
+        ], { edit: editUser, inst: true });
+    });
+  },
+  sites: function () {
+    return Promise.all([get('installations'), get('buildings')]).then(function (r) {
+      return head('Sites', 'Installations and buildings from the setup and intake data model. The three pilot installations carry buildings and rooms; the others are dashboard benchmarks.') +
+        tablePanel('insts', 'Installations', r[0], [{ k: 'id', l: 'Code' }, { k: 'name', l: 'Name' }, { k: 'state', l: 'State' }, { k: 'climate', l: 'Climate' }, { k: 'lead_name', l: 'Site lead' },
+          { k: 'manager_name', l: 'Barracks manager' }, { l: 'Techs', f: function (x) { return esc((x.tech_names || []).join(', ')); } }, { l: 'Pilot', f: function (x) { return x.pilot ? '<span class="tag">Pilot</span>' : ''; } }], { inst: false }) +
+        tablePanel('bldgs', 'Buildings', r[1], [{ k: 'id', l: 'ID' }, { k: 'inst', l: 'Inst' }, { k: 'bldg', l: 'Bldg' }, { k: 'type', l: 'Type' }, { k: 'built', l: 'Built', n: 1 },
+          { k: 'floors', l: 'Floors', n: 1 }, { k: 'rooms_per_floor', l: 'Rooms per floor', n: 1 }, { k: 'sensor_pod', l: 'Sensor pod' }]);
+    });
+  },
+  rooms: function () {
+    return get('rooms').then(function (rows) {
+      return head('Rooms', 'Every room BRP tracks. Status follows open work orders and the room sensor. Edit to take a room offline or bring it back.') +
+        tablePanel('rooms', 'Rooms', rows, [{ k: 'id', l: 'Room' }, { k: 'inst', l: 'Inst' }, { k: 'bldg', l: 'Bldg' }, { k: 'room', l: 'Rm' }, { k: 'occupancy', l: 'Occupancy' },
+          { l: 'Status', t: function (r) { return LBL[r.status]; }, f: function (r) { return st(r.status); } }, { k: 'offline_reason', l: 'Offline reason' },
+          { l: 'Sensor', f: function (r) { return r.sensor_id ? esc(r.sensor_id + ' · ' + r.sensor_rh + '% RH · ' + r.sensor_temp_f + ' °F') : ''; } }], { edit: editRoom });
+    });
+  },
+  wo: function () {
+    return get('work_orders').then(function (rows) {
+      return head('Work orders', 'Back office, field tablet, dashboard and agent simulation orders in one table. Due is the DoD resolve clock for the priority.') +
+        tablePanel('wo', 'Work orders', rows, [{ k: 'id', l: 'ID' }, { k: 'inst', l: 'Inst' }, { l: 'Room', t: function (r) { return r.bldg + ' ' + r.room; }, f: function (r) { return esc(r.bldg + ' · ' + r.room); } },
+          { k: 'title', l: 'Title', f: function (r) { return '<div class="wrap">' + esc(r.title) + '</div>'; } }, { k: 'prio', l: 'Priority' },
+          { l: 'Status', t: function (r) { return LBL[r.status]; }, f: function (r) { return st(r.status); } }, { k: 'step', l: 'Step' }, { k: 'tech_name', l: 'Tech' },
+          { k: 'source', l: 'Source' }, { l: 'Opened', f: function (r) { return esc(fdt(r.created_at)); } }, { l: 'Due', f: function (r) { return esc(fdt(r.due_at)); } }], { edit: editWo });
+    });
+  },
+  parts: function () {
+    return Promise.all([get('parts'), get('catalog_items')]).then(function (r) {
+      return head('Parts and catalog', 'Sample SKUs used by work orders and stock, and the cited research catalog. Catalog prices keep their basis label; NSNs appear only where a public page shows one.') +
+        tablePanel('parts', 'Parts', r[0], [{ k: 'sku', l: 'SKU' }, { k: 'name', l: 'Name' }, { k: 'cat', l: 'Category' }, { l: 'Cost', n: 1, f: function (x) { return x.design_only ? 'Design' : money(x.cost); } },
+          { k: 'vendor_id', l: 'Vendor' }, { k: 'lead_days', l: 'Lead days', n: 1 }, { k: 'rop', l: 'ROP', n: 1 }, { k: 'catalog_id', l: 'Catalog' }], { inst: false }) +
+        tablePanel('catalog', 'Research catalog (cited)', r[1], [{ k: 'id', l: 'ID' }, { k: 'name', l: 'Name', f: function (x) { return '<div class="wrap">' + esc(x.name) + '</div>'; } }, { k: 'category', l: 'Category' },
+          { l: 'Price', n: 1, f: function (x) { return x.price_low == null ? '' : esc(money(x.price_low) + (x.price_high && x.price_high !== x.price_low ? ' to ' + money(x.price_high) : '')); } },
+          { k: 'price_basis_label', l: 'Price basis', f: function (x) { return '<div class="wrap small">' + esc(x.price_basis_label || '') + '</div>'; } }, { k: 'nsn', l: 'NSN' },
+          { l: 'Sources', f: function (x) { return (x.sources || []).map(function (s, i) { return s.url && /^https:/.test(s.url) ? '<a href="' + esc(s.url) + '" rel="noopener noreferrer" target="_blank" title="' + esc(s.title) + '">' + (i + 1) + '</a>' : '<span title="' + esc(s.title) + '">' + (i + 1) + '</span>'; }).join(' '); } }],
+        { inst: false });
+    });
+  },
+  stock: function () {
+    return get('stock').then(function (rows) {
+      return head('Stock', 'Cabinet counts by SKU. Rows below the reorder point also appear on the purchase list.') +
+        tablePanel('stock', 'Cabinet stock', rows, [{ k: 'cabinet_id', l: 'Cabinet' }, { k: 'inst', l: 'Inst' }, { k: 'sku', l: 'SKU' }, { k: 'qty', l: 'Qty', n: 1 }, { k: 'rop', l: 'ROP', n: 1 },
+          { l: 'State', t: function (r) { return r.qty === 0 ? 'out' : r.rop != null && r.qty < r.rop ? 'low' : 'ok'; }, f: function (r) { return r.qty === 0 ? dot('act', 'Out') : r.rop != null && r.qty < r.rop ? dot('watch', 'Low') : dot('ok', 'OK'); } }]);
+    });
+  },
+  po: function () {
+    return get('purchase_orders').then(function (rows) {
+      return head('Purchase orders', 'Work order and replenishment POs. Edit to move a PO through its status.') +
+        tablePanel('po', 'Purchase orders', rows, [{ k: 'id', l: 'PO' }, { k: 'inst', l: 'Inst' }, { k: 'vendor_id', l: 'Vendor' }, { k: 'kind', l: 'Kind' }, { l: 'Status', t: function (r) { return LBL[r.status]; }, f: function (r) { return st(r.status); } },
+          { l: 'Total', n: 1, f: function (r) { return money(r.total); } }, { l: 'Issued', f: function (r) { return esc(fdt(r.issued_at)); } }, { l: 'ETA', f: function (r) { return esc(fdt(r.eta)); } }, { k: 'wo_id', l: 'Work order' }, { k: 'tracking', l: 'Tracking' }], { edit: editPo });
+    });
+  },
+  plist: function () {
+    return get('purchase_list').then(function (rows) {
+      return head('Purchase list', 'Items people asked to buy that are not on a PO yet: open requisitions, technician part requests and cabinet items under their reorder point. Admin only.') +
+        tablePanel('plist', 'Purchase list', rows, [{ k: 'id', l: 'ID' }, { k: 'inst', l: 'Inst', f: function (r) { return esc(r.inst || 'All'); } }, { k: 'description', l: 'Item', f: function (r) { return '<div class="wrap">' + esc(r.description) + '</div>'; } },
+          { k: 'qty', l: 'Qty', n: 1 }, { l: 'Est. unit', n: 1, f: function (r) { return money(r.est_unit_cost); } }, { k: 'vendor_id', l: 'Vendor' }, { k: 'source', l: 'Source' },
+          { l: 'Status', t: function (r) { return LBL[r.status]; }, f: function (r) { return st(r.status); } }, { k: 'po_id', l: 'PO' }, { k: 'reason', l: 'Reason', f: function (r) { return '<div class="wrap small">' + esc(r.note || r.reason || '') + '</div>'; } }],
+        { edit: editPl, actions: '<button class="btn pri" type="button" id="pl-add">Add item</button>' });
+    });
+  },
+  csat: function () {
+    return get('satisfaction').then(function (rows) {
+      return head('Satisfaction', 'Soldier answers by app, text, wall code and monthly pulse. Anonymous answers carry no name or account.') +
+        tablePanel('csat', 'Satisfaction records', rows, [{ l: 'When', f: function (r) { return esc(fdt(r.at)); } }, { k: 'inst', l: 'Inst' }, { k: 'bldg', l: 'Bldg' }, { k: 'room', l: 'Rm' }, { k: 'channel', l: 'Channel' },
+          { l: 'Score', n: 1, f: function (r) { return esc(r.score + ' of ' + r.scale); } }, { k: 'text', l: 'Comment', f: function (r) { return '<div class="wrap">' + esc(r.text || '') + '</div>'; } },
+          { l: 'From', f: function (r) { return r.anon ? '<span class="muted">Anonymous</span>' : esc(r.by_name || ''); } }, { k: 'wo_id', l: 'Work order' }]);
+    });
+  },
+  alerts: function () {
+    return Promise.all([get('alerts'), get('alert_recipients')]).then(function (r) {
+      var by = {}; r[1].forEach(function (x) { (by[x.alert_id] = by[x.alert_id] || []).push(x); });
+      return head('Alerts', 'Each alert fans out to its tagged people plus the site lead and barracks manager for the installation, the assigned technician, and on critical alerts the program manager. Each person gets one outbox row.') +
+        tablePanel('alerts', 'Alerts', r[0], [{ k: 'id', l: 'ID' }, { l: 'When', f: function (x) { return esc(fdt(x.at)); } }, { l: 'Severity', t: function (x) { return x.severity; }, f: function (x) { return '<span class="tag ' + (x.severity === 'critical' ? 'crit' : x.severity === 'high' ? 'high' : '') + '">' + esc(x.severity) + '</span>'; } },
+          { k: 'title', l: 'Title', f: function (x) { return '<div class="wrap">' + esc(x.title) + '</div>'; } }, { k: 'inst', l: 'Inst' }, { k: 'ref', l: 'Record' },
+          { l: 'Tagged', f: function (x) { return esc((by[x.id] || []).map(function (p) { return p.name + ' (' + p.role + ')'; }).join(', ')); } }],
+        { actions: '<button class="btn pri" type="button" id="al-new">Send test alert</button>' });
+    });
+  },
+  outbox: function () {
+    return get('email_outbox').then(function (rows) {
+      return head('Email outbox', 'One row per tagged person per alert. <b>Email delivery is off.</b> "Logged, not sent" means the message was written here and never left the server. Select View to read a message.') +
+        tablePanel('outbox', 'Outbox', rows, [{ l: 'When', f: function (r) { return esc(fdt(r.created_at)); } }, { k: 'to_email', l: 'To' }, { k: 'to_role', l: 'Role' },
+          { k: 'subject', l: 'Subject', f: function (r) { return '<div class="wrap">' + esc(r.subject) + '</div>'; } }, { l: 'Status', t: function (r) { return LBL[r.status]; }, f: function (r) { return st(r.status); } },
+          { k: 'alert_id', l: 'Alert' }], { edit: viewMail, editLabel: 'View' });
+    });
+  },
+  audit: function () {
+    return get('audit_log', true).then(function (rows) {
+      var diff = function (r) {
+        var n = r.new_row || {}, o = r.old_row || {};
+        if (r.action === 'insert' || r.action === 'delete') return '';
+        return Object.keys(n).slice(0, 4).map(function (k) { return k + ': ' + JSON.stringify(o[k] === undefined ? null : o[k]) + ' to ' + JSON.stringify(n[k]); }).join('; ');
+      };
+      return head('Audit log', 'Every change to accounts, sites, rooms, work orders, purchasing, stock and settings, newest first. Nobody can edit this log from the client.') +
+        tablePanel('audit', 'Audit log', rows, [{ l: 'When', f: function (r) { return esc(fdt(r.at)); } }, { k: 'actor_email', l: 'Who' }, { l: 'Role', f: function (r) { return esc(RL[r.actor_role] || r.actor_role || 'System'); } },
+          { k: 'action', l: 'Action' }, { k: 'table_name', l: 'Table' }, { k: 'row_id', l: 'Record' }, { l: 'Change', t: diff, f: function (r) { return '<div class="wrap small">' + esc(diff(r)) + '</div>'; } }], { inst: false });
+    });
+  }
+};
+
+function render() {
+  var m = $('main'), tab = cur;
+  m.setAttribute('aria-busy', 'true');
+  VIEWS[tab]().then(function (h) { if (tab !== cur) return; m.innerHTML = h; m.removeAttribute('aria-busy'); }).catch(function (e) {
+    m.innerHTML = head('Could not load', esc((e && e.message) || 'The server refused the request.')); m.removeAttribute('aria-busy');
+  });
+}
+
+/* ---------- main events ---------- */
+$('main').addEventListener('input', function (e) {
+  var k = e.target.getAttribute('data-q'); if (!k) return;
+  VIEW[k].q = e.target.value; VIEW[k].n = 50;
+  var pos = e.target.selectionStart; render2(k, pos);
+});
+$('main').addEventListener('change', function (e) {
+  var k = e.target.getAttribute('data-i'); if (!k || e.target.tagName !== 'SELECT') return;
+  VIEW[k].inst = e.target.value; VIEW[k].n = 50; render2(k);
+});
+function render2(k, pos) {
+  var tab = cur;
+  VIEWS[tab]().then(function (h) {
+    if (tab !== cur) return;
+    $('main').innerHTML = h;
+    var q = $('q-' + k); if (pos != null && q) { q.focus(); try { q.setSelectionRange(pos, pos); } catch (x) { /* ok */ } }
+    else { var s = $('i-' + k); if (s) s.focus(); }
+  });
+}
+$('main').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  if (b.hasAttribute('data-go')) { var t = b.getAttribute('data-go'); var tb = $('tabs').querySelector('[data-tab="' + t + '"]'); if (tb) tb.click(); return; }
+  if (b.hasAttribute('data-more')) { VIEW[b.getAttribute('data-more')].n += 50; render(); return; }
+  if (b.hasAttribute('data-edit')) { var p = PANELS[b.getAttribute('data-edit')]; p.edit(p.rows[+b.getAttribute('data-i')]); return; }
+  if (b.id === 'reset') return confirmReset();
+  if (b.id === 'pl-add') return addPl();
+  if (b.id === 'al-new') return newAlert();
+});
+
+/* ---------- dialogs ---------- */
+var dlg = $('dlg'), dform = $('dlg-form');
+function openDialog(title, body, onSave, saveLabel, danger) {
+  dform.innerHTML = '<h2 id="dlg-h">' + esc(title) + '</h2>' + body + '<p class="err" id="dlg-err" role="alert"></p><div class="row"><button class="btn" type="button" value="cancel" id="dlg-cancel">Cancel</button>' +
+    (onSave ? '<button class="btn ' + (danger ? 'danger' : 'pri') + '" type="submit" id="dlg-save">' + esc(saveLabel || 'Save') + '</button>' : '') + '</div>';
+  $('dlg-cancel').onclick = function () { dlg.close(); };
+  dform.onsubmit = function (e) {
+    e.preventDefault(); if (!onSave) return dlg.close();
+    $('dlg-save').disabled = true;
+    Promise.resolve().then(onSave).then(function (msg) { dlg.close(); if (msg) toast(msg); }).catch(function (x) { $('dlg-err').textContent = (x && x.message) || 'Not saved.'; $('dlg-save').disabled = false; });
+  };
+  if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+  var f = dform.querySelector('select,input,textarea'); if (f) f.focus();
+}
+var sel = function (id, label, opts, val) { return '<div class="field"><label class="lbl" for="' + id + '">' + esc(label) + '</label><select class="in" id="' + id + '">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(val == null ? '' : val) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></div>'; };
+var inp = function (id, label, val, type) { return '<div class="field"><label class="lbl" for="' + id + '">' + esc(label) + '</label><input class="in" id="' + id + '" type="' + (type || 'text') + '" value="' + esc(val == null ? '' : val) + '"></div>'; };
+var val = function (id) { return $(id).value; };
+var instChoices = function () { return [['', 'All installations']].concat(INSTS.filter(function (i) { return i.pilot; }).map(function (i) { return [i.id, i.name + ' (' + i.id + ')']; })); };
+
+function editUser(u) {
+  openDialog('Edit ' + u.email, '<p class="small muted">Name: ' + esc(u.full_name) + (u.demo ? '. Demo account.' : '.') + '</p>' +
+    sel('f-role', 'Role', ROLES, u.role) + sel('f-inst', 'Installation', instChoices(), u.inst || '') +
+    '<label class="check"><input type="checkbox" id="f-active"' + (u.active ? ' checked' : '') + '> Account active</label>',
+  function () {
+    return api.setRole(u.id, val('f-role'), val('f-inst') || null, $('f-active').checked).then(function () { refresh(['profiles', 'audit_log']); return 'Saved. ' + u.email + ' is now ' + RL[val('f-role')] + '.'; });
+  });
+}
+function editRoom(r) {
+  openDialog('Room ' + r.id, sel('f-st', 'Status', [['ok', 'OK'], ['watch', 'Watch'], ['action', 'Action'], ['offline', 'Offline']], r.status) + inp('f-why', 'Offline reason', r.offline_reason),
+    function () {
+      var s = val('f-st'), why = val('f-why').trim();
+      if (s === 'offline' && !why) throw new Error('Give a reason for taking the room offline.');
+      return api.update('rooms', r.id, { status: s, offline_reason: s === 'offline' ? why : null }).then(function () { refresh(['rooms', 'audit_log']); return 'Room ' + r.id + ' saved.'; });
+    });
+}
+function editWo(w) {
+  openDialog(w.id + ' · ' + w.title, sel('f-st', 'Status', [['open', 'Open'], ['in_progress', 'In progress'], ['waiting_parts', 'Waiting on parts'], ['closed', 'Closed']], w.status) +
+    sel('f-pr', 'Priority', [['Emergency', 'Emergency'], ['Urgent', 'Urgent'], ['Routine', 'Routine']], w.prio) + inp('f-tech', 'Technician', w.tech_name),
+  function () {
+    return api.update('work_orders', w.id, { status: val('f-st'), prio: val('f-pr'), tech_name: val('f-tech').trim() || null }).then(function () { refresh(['work_orders', 'audit_log']); return w.id + ' saved.'; });
+  });
+}
+function editPo(p) {
+  openDialog('PO ' + p.id, sel('f-st', 'Status', ['requested', 'issued', 'shipped', 'backordered', 'received', 'cancelled'].map(function (s) { return [s, LBL[s]]; }), p.status) + inp('f-trk', 'Tracking', p.tracking),
+    function () {
+      var s = val('f-st'), patch = { status: s, tracking: val('f-trk').trim() || null };
+      if (s === 'received' && !p.received_at) patch.received_at = new Date().toISOString();
+      return api.update('purchase_orders', p.id, patch).then(function () { refresh(['purchase_orders', 'audit_log']); return 'PO ' + p.id + ' saved.'; });
+    });
+}
+function editPl(r) {
+  openDialog(r.id + ' · ' + r.description, sel('f-st', 'Status', ['not_ordered', 'requested', 'approved', 'ordered', 'received', 'cancelled'].map(function (s) { return [s, LBL[s]]; }), r.status) +
+    inp('f-po', 'PO number', r.po_id) + inp('f-note', 'Note', r.note),
+  function () {
+    return api.update('purchase_list', r.id, { status: val('f-st'), po_id: val('f-po').trim() || null, note: val('f-note').trim() || null }).then(function () { refresh(['purchase_list', 'audit_log']); return r.id + ' saved.'; });
+  });
+}
+function addPl() {
+  openDialog('Add to purchase list', inp('f-desc', 'Item') + sel('f-inst', 'Installation', instChoices().slice(1), 'STW') + inp('f-qty', 'Quantity', 1, 'number') + inp('f-cost', 'Estimated unit cost (USD)', '', 'number') + inp('f-why', 'Reason'),
+    function () {
+      var d = val('f-desc').trim(), q = parseInt(val('f-qty'), 10);
+      if (!d) throw new Error('Name the item.'); if (!(q > 0)) throw new Error('Quantity must be 1 or more.');
+      return api.insert('purchase_list', { description: d, inst: val('f-inst'), qty: q, est_unit_cost: val('f-cost') ? +val('f-cost') : null, reason: val('f-why').trim() || null, source: 'manual', status: 'requested' })
+        .then(function (row) { refresh(['purchase_list', 'audit_log']); return 'Added ' + ((row && row.id) || 'the item') + '.'; });
+    }, 'Add');
+}
+function newAlert() {
+  var roleBoxes = ROLES.filter(function (r) { return r[0] !== 'soldier'; }).map(function (r) { return '<label class="check"><input type="checkbox" name="f-tag" value="' + r[0] + '"' + (r[0] === 'buyer' ? ' checked' : '') + '> ' + esc(r[1]) + '</label>'; }).join('');
+  openDialog('Send test alert', '<p class="small muted">Writes the alert, fans it out and logs one outbox row per person. No email is sent.</p>' +
+    inp('f-title', 'Title', 'Test alert from the admin console') + inp('f-body', 'Detail', 'Checking the alert fan-out. Sample data.') +
+    sel('f-sev', 'Severity', [['info', 'Info'], ['high', 'High'], ['critical', 'Critical']], 'info') + inp('f-ref', 'Record tag', 'wo:WO-24364') +
+    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="lbl">Also tag these roles</legend>' + roleBoxes + '</fieldset>',
+  function () {
+    var t = val('f-title').trim(); if (!t) throw new Error('Give the alert a title.');
+    var tags = Array.prototype.map.call(dform.querySelectorAll('input[name="f-tag"]:checked'), function (c) { return { role: c.value }; });
+    return api.notify({ title: t, body: val('f-body'), severity: val('f-sev'), ref: val('f-ref').trim() || null, tags: tags, type: 'custom' }).then(function (a) {
+      refresh(['alerts', 'alert_recipients', 'email_outbox']);
+      return 'Alert ' + ((a && a.id) || '') + ' sent to ' + ((a && a.tagged && a.tagged.length) || 0) + ' people. Outbox rows logged, nothing emailed.';
+    });
+  }, 'Send alert');
+}
+function viewMail(r) {
+  openDialog(r.subject, '<dl class="kv"><dt>To</dt><dd>' + esc(r.to_name + ' <' + r.to_email + '>') + '</dd><dt>Role</dt><dd>' + esc(r.to_role) + '</dd><dt>Status</dt><dd>' + st(r.status) +
+    (r.error ? ' ' + esc(r.error) : '') + '</dd><dt>Written</dt><dd>' + esc(fdt(r.created_at)) + '</dd></dl><pre class="mail">' + esc(r.body) + '</pre>', null);
+}
+function confirmReset() {
+  openDialog('Reset demo data?', '<p>This reloads all sample work orders, rooms, POs, stock, purchase list items, alerts and outbox rows, and puts the nine demo accounts back on their demo roles. Changes made since the last reset are lost. Real accounts and push tokens stay.</p>',
+    function () { return api.reset().then(function () { refresh(); return 'Demo data reset.'; }); }, 'Reset demo data', true);
+}
+
+/* ---------- start ---------- */
+api.restore().then(function (p) {
+  if (p && p.role === 'admin') { ME = p; openApp(); }
+  else if (p) { api.signOut(); }
+}).catch(function () { /* stay on the gate */ });
+})();
+</script>
+</body>
+</html>

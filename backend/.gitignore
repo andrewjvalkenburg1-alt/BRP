@@ -1,0 +1,8 @@
+# Secrets never go in this public repo.
+.env
+.env.*
+*.local
+supabase/.temp/
+supabase/.branches/
+supabase/functions/.env
+node_modules/
