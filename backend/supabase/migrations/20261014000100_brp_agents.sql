@@ -100,7 +100,7 @@ create index agent_proposals_agent_inst on public.agent_proposals (agent, inst, 
 -- Money rule settings. history_since: optional per-installation override of the first spend date, e.g. {"STW": "2026-05-04"}.
 insert into public.settings (key, value, note) values
   ('buyer_money_rule',
-   '{"per_order_limit": 500, "weekly_cap_default": 2500, "history_months": 3, "trailing_weeks": 13, "max_over_average": 0.10, "site_lead_max": 2500, "week_tz": "America/Chicago", "per_order_confirmed": false, "history_since": {}}',
+   '{"per_order_limit": 500, "weekly_cap_default": 2500, "history_months": 3, "trailing_weeks": 13, "max_over_average": 0.10, "site_lead_max": 2500, "week_tz": "America/Chicago", "per_order_confirmed": true, "history_since": {}}',
    'Andrew''s buyer rule, per installation. Over either limit goes to that installation''s site lead; over site_lead_max for one order goes to the program manager. per_order_limit is assumed fixed until Andrew confirms.')
 on conflict (key) do nothing;
 

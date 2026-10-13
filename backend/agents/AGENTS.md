@@ -92,7 +92,7 @@ My calculation, a 30-day month:
    export BRP_AGENT_TOKEN_ROOM_READINESS=$(openssl rand -hex 32)
    ```
 5. **Decisions:**
-   - Confirm the per-order limit ($500 is assumed fixed; `settings.buyer_money_rule.per_order_confirmed` is false until you say so).
+   - Per-order limit: confirmed by Andrew on Oct 13, 2026. $500 stays fixed while weekly caps change (`settings.buyer_money_rule.per_order_confirmed` is true). Spend above $2,500 a week, when an installation's average allows it, is approved by the program manager.
    - Confirm that the weekly cap may rise above $2,500 once history supports it (the rule as written: trailing 3-month average plus 10%, so an installation averaging $3,000 a week gets $3,300).
    - Week boundaries: Monday 00:00 America/Chicago today (`week_tz` in `settings.buyer_money_rule`). Change it if you want each installation's local time.
    - Sonnet 5.5 for Sensor Watch (re-bench first) or Opus 5.5.
