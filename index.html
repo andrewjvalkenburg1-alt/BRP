@@ -2403,7 +2403,17 @@ var iname = function (c) { return INAME[c] || c; };
 var CLK = { Emergency: [H, DY], Urgent: [8 * H, 7 * DY], Routine: [24 * H, 30 * DY] };
 var STEP = { request: 'waiting on barracks manager verification', verified: 'waiting on contractor acceptance', accepted: 'accepted', longlead: 'waiting on a long-lead part decision', pulled: 'parts pulled from the cabinet', approval: 'waiting on purchase approval', po: 'part ordered', shipped: 'part shipped', delivered: 'part received', fab: 'part in local fabrication', qa: 'in QA check', scheduled: 'repair scheduled', installed: 'fix installed, waiting on Soldier confirmation', closed: 'closed', New: 'new, not started yet', Accepted: 'accepted by the tech', 'Pending verification': 'waiting on barracks manager verification', 'Awaiting Soldier confirmation': 'fix done, waiting on Soldier confirmation', Verified: 'closed', Assigned: 'assigned', 'In work': 'in work', Fixed: 'fixed', 'Verified by Soldier': 'closed' };
 var CLOSED = /^(closed|Verified|Verified by Soldier|Fixed)$/;
-var HOME = { 'SGT J. Parker': ['STW', '4513', '218'] };
+/* BRP One: the Soldier's room is the signed-in account's home room (BRPONE.ACCTS), so every answer about "my room" uses the same room as the Soldier portal. */
+function homeOf(s) {
+  var u = (s && s.u) || {}, a = null, h = null;
+  try {
+    var O = window.BRPONE || (window.parent !== window && window.parent.BRPONE) || null;
+    var me = O && O.user ? O.user() : null, em = (me && me.email) || u.email;
+    a = O && O.ACCTS ? O.ACCTS.filter(function (x) { return em ? x.email === em : x.name === u.name; })[0] : null;
+  } catch (e) { a = null; }
+  h = (a && a.home) || u.home;
+  return h ? [(a && a.inst) || u.inst || 'STW', String(h[0]), String(h[1])] : ['', '', ''];
+}
 var ENT = /Site lead|Program manager|COR|commander/i;
 var PUB = {
   about: ['BRP keeps every barracks room livable and proves it with a record. Room sensors, door QR reports, inspections to UFC 4-721-01 Appendix A and one operations center carry each problem from the first report to a verified fix.', [['How it works', '#how'], ['Room sensor', '#sensor']]],
@@ -2444,7 +2454,8 @@ function scope() {
   if (u.role === 'Technician') return { k: 'tech', name: u.name, inst: 'STW', u: u };
   return { k: 'ent', u: u };
 }
-function canWO(w, s) { return s.k === 'ent' || (s.k === 'mgr' && w.inst === s.inst) || (s.k === 'tech' && w.tech === s.name) || (s.k === 'sol' && w.sol === s.name); }
+function canWO(w, s) { return s.k === 'ent' || (s.k === 'mgr' && w.inst === s.inst) || (s.k === 'tech' && w.tech === s.name) || (s.k === 'sol' && (w.sol === s.name || inHome(w, s))); }
+function inHome(w, s) { var h = homeOf(s); return !!h[1] && w.inst === h[0] && w.b === h[1] && w.rm === h[2]; }
 function whyNot(w, s) {
   if (s.k === 'pub') return 'I can\'t look up records on the public website. Soldiers and BRP staff sign in to the back office or field tablet to ask about orders, parts and rooms.';
   if (s.k === 'sol') return w.id + ' is not one of your requests. Soldier accounts see only their own room and requests, so ask your barracks manager about other rooms.';
@@ -2453,7 +2464,7 @@ function whyNot(w, s) {
 }
 function canRoom(inst, b, rm, s) {
   if (s.k === 'ent') return true; if (s.k === 'mgr' || s.k === 'tech') return inst === 'STW';
-  if (s.k === 'sol') { var h = HOME[s.name]; return (h && h[1] === b && h[2] === rm) || X.all.some(function (w) { return w.sol === s.name && w.b === b && w.rm === rm; }); }
+  if (s.k === 'sol') { var h = homeOf(s); return (h && h[1] === b && h[2] === rm) || X.all.some(function (w) { return w.sol === s.name && w.b === b && w.rm === rm; }); }
   return false;
 }
 var mine = function (s, open) { return X.all.filter(function (w) { return canWO(w, s) && (!open || w.open); }); };
@@ -2533,7 +2544,7 @@ function ents(q, s) {
   m = /\b(?:rm|room)\.?\s*#?\s*(\d{3}|\d[a-p]|mech)\b/i.exec(q); if (m) e.rm = m[1].toUpperCase().replace('MECH', 'Mech');
   if (!e.b && !e.inst) { for (var i = 0; i < D.insts.length; i++) { var nm = D.insts[i][0], sh = nm.replace(/^(Fort|Camp|USAG|Joint Base) /, '').toLowerCase(); if (q.toLowerCase().indexOf(sh) >= 0 || (D.insts[i][1] && new RegExp('\\b' + D.insts[i][1] + '\\b', 'i').test(q)) || (/jblm/i.test(q) && /Lewis/.test(nm))) { e.iname = nm; e.inst = D.insts[i][1] || null; break; } } }
   var lq = q.toLowerCase(); e.parts = [];
-  if (s.k === 'sol' && /\bmy room\b/.test(lq) && !e.b) { var h = HOME[s.name]; e.inst = h[0]; e.b = h[1]; e.rm = h[2]; }
+  if (s.k === 'sol' && /\bmy room\b/.test(lq) && !e.b) { var h = homeOf(s); e.inst = h[0]; e.b = h[1]; e.rm = h[2]; }
   Object.keys(D.part).forEach(function (k) { if (lq.indexOf(k.toLowerCase()) >= 0) e.parts.push(k); });
   if (!e.parts.length) Object.keys(PWORDS).forEach(function (w) { if (lq.indexOf(w) >= 0) e.parts = e.parts.concat(PWORDS[w]); });
   if (/\bptac\b/i.test(q)) e.parts = ['PTAC-12K'];
@@ -2778,7 +2789,7 @@ function reqAns(r, s) {
 function part(w, p, e, s) {
   if (p) { var pw = X.wo[p.wo]; return ans([poTxt(p).replace(/^/, 'PO ' + p.id + ' covers ').replace(' on ' + p.id, '') + ' The order total is ' + money(p.total) + '.' + (pw ? ' It supplies ' + pw.id + ' at ' + place(pw) + '.' : ' It restocks the ' + iname(p.inst) + ' parts cage.')], pw ? ['Tell me about ' + pw.id, 'When will ' + pw.id + ' be fixed?'] : sug(s)); }
   var ws = w ? [w] : mine(s, true).filter(function (x) { return x.po.some(function (i) { return X.po[i] && !X.po[i].rcv; }); });
-  if (!w && s.k === 'sol') { var h = HOME[s.name]; ws.sort(function (a, b) { return (b.b === h[1] && b.rm === h[2]) - (a.b === h[1] && a.rm === h[2]); }); }
+  if (!w && s.k === 'sol') { var h = homeOf(s); ws.sort(function (a, b) { return (b.b === h[1] && b.rm === h[2]) - (a.b === h[1] && a.rm === h[2]); }); }
   if (!w && (s.k === 'mgr' || s.k === 'ent')) return onorder(e, s);
   if (!w && s.k === 'tech') { var tq = X.treq.filter(function (r) { var x = X.wo[r[4]]; return x && canWO(x, s); }); if (!ws.length && tq.length) return reqAns(tq[0], s); }
   if (!ws.length) { var o = mine(s, true); return ans([o.length ? 'None of your open requests has a part on order. ' + o[0].id + ' is ' + o[0].status + '.' : 'You have no open requests with parts on order.'], sug(s)); }
@@ -2791,7 +2802,7 @@ function part(w, p, e, s) {
   return ans(t, ['When will ' + a.id + ' be fixed?', 'Tell me about ' + a.id, 'Tell me about ' + open[0].id]);
 }
 function fixed(w, s) {
-  if (!w && s.k === 'sol') { var h = HOME[s.name]; w = X.all.filter(function (x) { return x.sol === s.name && x.open && x.b === h[1] && x.rm === h[2]; })[0] || mine(s, true)[0]; if (!w) return ans(['You have no open requests. Report a problem from the Soldier portal or the door QR code.'], sug(s)); }
+  if (!w && s.k === 'sol') { var h = homeOf(s); w = X.all.filter(function (x) { return canWO(x, s) && x.open && x.b === h[1] && x.rm === h[2]; })[0] || mine(s, true)[0]; if (!w) return ans(['You have no open requests. Report a problem from the Soldier portal or the door QR code.'], sug(s)); }
   if (!w) return ans(['Tell me which order or room you mean, for example "When will WO-24292 be fixed?"'], sug(s));
   if (!w.open) return ans([w.id + ' at ' + place(w) + ' is closed' + (w.end ? ' as of ' + fdt(w.end) : '') + '.'], ['Tell me about ' + w.id]);
   var c = clock(w), t = ['Status of ' + w.id + ' at ' + place(w) + ': ' + w.status + '. ' + next(w), 'The UFC 4-721-01 clock for ' + w.pri + ' work is ' + clockTxt(w) + '.'];
@@ -2817,7 +2828,7 @@ function assigned(w, s, e) {
 function sensor(w, e, s) {
   var inst = w ? w.inst : e.inst || 'STW', b = w ? w.b : e.b, rm = w ? w.rm : e.rm;
   if (!b && rm) { var c = roomCands(rm, s); if (c.length === 1) { inst = c[0][0]; b = c[0][1]; } else if (c.length > 1) return ans(['Rm ' + rm + ' exists in ' + list(c.map(function (x) { return 'Bldg ' + x[1]; })) + '. Which building do you mean?'], c.slice(0, 3).map(function (x) { return 'Sensor reading for Bldg ' + x[1] + ' Rm ' + rm; })); }
-  if (!b && s.k === 'sol') { var h = HOME[s.name]; inst = h[0]; b = h[1]; rm = h[2]; }
+  if (!b && s.k === 'sol') { var h = homeOf(s); inst = h[0]; b = h[1]; rm = h[2]; }
   if (b && rm) {
     if (!canRoom(inst, b, rm, s)) return ans([deny(s, 'Bldg ' + b + ' Rm ' + rm)], sug(s), { deny: 1 });
     var z = sensorFor(inst, b, rm); return ans([z ? 'Bldg ' + b + ' Rm ' + rm + ': ' + sensTxt(z) : 'Bldg ' + b + ' Rm ' + rm + ' has no BRP room sensor in the sample data. Bldg 412 at Fort Stewart has sensors in every room.'], ['Status of Bldg ' + b + ' Rm ' + rm, 'What is overdue on the UFC clocks?']);
@@ -6078,7 +6089,17 @@ var iname = function (c) { return INAME[c] || c; };
 var CLK = { Emergency: [H, DY], Urgent: [8 * H, 7 * DY], Routine: [24 * H, 30 * DY] };
 var STEP = { request: 'waiting on barracks manager verification', verified: 'waiting on contractor acceptance', accepted: 'accepted', longlead: 'waiting on a long-lead part decision', pulled: 'parts pulled from the cabinet', approval: 'waiting on purchase approval', po: 'part ordered', shipped: 'part shipped', delivered: 'part received', fab: 'part in local fabrication', qa: 'in QA check', scheduled: 'repair scheduled', installed: 'fix installed, waiting on Soldier confirmation', closed: 'closed', New: 'new, not started yet', Accepted: 'accepted by the tech', 'Pending verification': 'waiting on barracks manager verification', 'Awaiting Soldier confirmation': 'fix done, waiting on Soldier confirmation', Verified: 'closed', Assigned: 'assigned', 'In work': 'in work', Fixed: 'fixed', 'Verified by Soldier': 'closed' };
 var CLOSED = /^(closed|Verified|Verified by Soldier|Fixed)$/;
-var HOME = { 'SGT J. Parker': ['STW', '4513', '218'] };
+/* BRP One: the Soldier's room is the signed-in account's home room (BRPONE.ACCTS), so every answer about "my room" uses the same room as the Soldier portal. */
+function homeOf(s) {
+  var u = (s && s.u) || {}, a = null, h = null;
+  try {
+    var O = window.BRPONE || (window.parent !== window && window.parent.BRPONE) || null;
+    var me = O && O.user ? O.user() : null, em = (me && me.email) || u.email;
+    a = O && O.ACCTS ? O.ACCTS.filter(function (x) { return em ? x.email === em : x.name === u.name; })[0] : null;
+  } catch (e) { a = null; }
+  h = (a && a.home) || u.home;
+  return h ? [(a && a.inst) || u.inst || 'STW', String(h[0]), String(h[1])] : ['', '', ''];
+}
 var ENT = /Site lead|Program manager|COR|commander/i;
 var PUB = {
   about: ['BRP keeps every barracks room livable and proves it with a record. Room sensors, door QR reports, inspections to UFC 4-721-01 Appendix A and one operations center carry each problem from the first report to a verified fix.', [['How it works', '#how'], ['Room sensor', '#sensor']]],
@@ -6119,7 +6140,8 @@ function scope() {
   if (u.role === 'Technician') return { k: 'tech', name: u.name, inst: 'STW', u: u };
   return { k: 'ent', u: u };
 }
-function canWO(w, s) { return s.k === 'ent' || (s.k === 'mgr' && w.inst === s.inst) || (s.k === 'tech' && w.tech === s.name) || (s.k === 'sol' && w.sol === s.name); }
+function canWO(w, s) { return s.k === 'ent' || (s.k === 'mgr' && w.inst === s.inst) || (s.k === 'tech' && w.tech === s.name) || (s.k === 'sol' && (w.sol === s.name || inHome(w, s))); }
+function inHome(w, s) { var h = homeOf(s); return !!h[1] && w.inst === h[0] && w.b === h[1] && w.rm === h[2]; }
 function whyNot(w, s) {
   if (s.k === 'pub') return 'I can\'t look up records on the public website. Soldiers and BRP staff sign in to the back office or field tablet to ask about orders, parts and rooms.';
   if (s.k === 'sol') return w.id + ' is not one of your requests. Soldier accounts see only their own room and requests, so ask your barracks manager about other rooms.';
@@ -6128,7 +6150,7 @@ function whyNot(w, s) {
 }
 function canRoom(inst, b, rm, s) {
   if (s.k === 'ent') return true; if (s.k === 'mgr' || s.k === 'tech') return inst === 'STW';
-  if (s.k === 'sol') { var h = HOME[s.name]; return (h && h[1] === b && h[2] === rm) || X.all.some(function (w) { return w.sol === s.name && w.b === b && w.rm === rm; }); }
+  if (s.k === 'sol') { var h = homeOf(s); return (h && h[1] === b && h[2] === rm) || X.all.some(function (w) { return w.sol === s.name && w.b === b && w.rm === rm; }); }
   return false;
 }
 var mine = function (s, open) { return X.all.filter(function (w) { return canWO(w, s) && (!open || w.open); }); };
@@ -6208,7 +6230,7 @@ function ents(q, s) {
   m = /\b(?:rm|room)\.?\s*#?\s*(\d{3}|\d[a-p]|mech)\b/i.exec(q); if (m) e.rm = m[1].toUpperCase().replace('MECH', 'Mech');
   if (!e.b && !e.inst) { for (var i = 0; i < D.insts.length; i++) { var nm = D.insts[i][0], sh = nm.replace(/^(Fort|Camp|USAG|Joint Base) /, '').toLowerCase(); if (q.toLowerCase().indexOf(sh) >= 0 || (D.insts[i][1] && new RegExp('\\b' + D.insts[i][1] + '\\b', 'i').test(q)) || (/jblm/i.test(q) && /Lewis/.test(nm))) { e.iname = nm; e.inst = D.insts[i][1] || null; break; } } }
   var lq = q.toLowerCase(); e.parts = [];
-  if (s.k === 'sol' && /\bmy room\b/.test(lq) && !e.b) { var h = HOME[s.name]; e.inst = h[0]; e.b = h[1]; e.rm = h[2]; }
+  if (s.k === 'sol' && /\bmy room\b/.test(lq) && !e.b) { var h = homeOf(s); e.inst = h[0]; e.b = h[1]; e.rm = h[2]; }
   Object.keys(D.part).forEach(function (k) { if (lq.indexOf(k.toLowerCase()) >= 0) e.parts.push(k); });
   if (!e.parts.length) Object.keys(PWORDS).forEach(function (w) { if (lq.indexOf(w) >= 0) e.parts = e.parts.concat(PWORDS[w]); });
   if (/\bptac\b/i.test(q)) e.parts = ['PTAC-12K'];
@@ -6453,7 +6475,7 @@ function reqAns(r, s) {
 function part(w, p, e, s) {
   if (p) { var pw = X.wo[p.wo]; return ans([poTxt(p).replace(/^/, 'PO ' + p.id + ' covers ').replace(' on ' + p.id, '') + ' The order total is ' + money(p.total) + '.' + (pw ? ' It supplies ' + pw.id + ' at ' + place(pw) + '.' : ' It restocks the ' + iname(p.inst) + ' parts cage.')], pw ? ['Tell me about ' + pw.id, 'When will ' + pw.id + ' be fixed?'] : sug(s)); }
   var ws = w ? [w] : mine(s, true).filter(function (x) { return x.po.some(function (i) { return X.po[i] && !X.po[i].rcv; }); });
-  if (!w && s.k === 'sol') { var h = HOME[s.name]; ws.sort(function (a, b) { return (b.b === h[1] && b.rm === h[2]) - (a.b === h[1] && a.rm === h[2]); }); }
+  if (!w && s.k === 'sol') { var h = homeOf(s); ws.sort(function (a, b) { return (b.b === h[1] && b.rm === h[2]) - (a.b === h[1] && a.rm === h[2]); }); }
   if (!w && (s.k === 'mgr' || s.k === 'ent')) return onorder(e, s);
   if (!w && s.k === 'tech') { var tq = X.treq.filter(function (r) { var x = X.wo[r[4]]; return x && canWO(x, s); }); if (!ws.length && tq.length) return reqAns(tq[0], s); }
   if (!ws.length) { var o = mine(s, true); return ans([o.length ? 'None of your open requests has a part on order. ' + o[0].id + ' is ' + o[0].status + '.' : 'You have no open requests with parts on order.'], sug(s)); }
@@ -6466,7 +6488,7 @@ function part(w, p, e, s) {
   return ans(t, ['When will ' + a.id + ' be fixed?', 'Tell me about ' + a.id, 'Tell me about ' + open[0].id]);
 }
 function fixed(w, s) {
-  if (!w && s.k === 'sol') { var h = HOME[s.name]; w = X.all.filter(function (x) { return x.sol === s.name && x.open && x.b === h[1] && x.rm === h[2]; })[0] || mine(s, true)[0]; if (!w) return ans(['You have no open requests. Report a problem from the Soldier portal or the door QR code.'], sug(s)); }
+  if (!w && s.k === 'sol') { var h = homeOf(s); w = X.all.filter(function (x) { return canWO(x, s) && x.open && x.b === h[1] && x.rm === h[2]; })[0] || mine(s, true)[0]; if (!w) return ans(['You have no open requests. Report a problem from the Soldier portal or the door QR code.'], sug(s)); }
   if (!w) return ans(['Tell me which order or room you mean, for example "When will WO-24292 be fixed?"'], sug(s));
   if (!w.open) return ans([w.id + ' at ' + place(w) + ' is closed' + (w.end ? ' as of ' + fdt(w.end) : '') + '.'], ['Tell me about ' + w.id]);
   var c = clock(w), t = ['Status of ' + w.id + ' at ' + place(w) + ': ' + w.status + '. ' + next(w), 'The UFC 4-721-01 clock for ' + w.pri + ' work is ' + clockTxt(w) + '.'];
@@ -6492,7 +6514,7 @@ function assigned(w, s, e) {
 function sensor(w, e, s) {
   var inst = w ? w.inst : e.inst || 'STW', b = w ? w.b : e.b, rm = w ? w.rm : e.rm;
   if (!b && rm) { var c = roomCands(rm, s); if (c.length === 1) { inst = c[0][0]; b = c[0][1]; } else if (c.length > 1) return ans(['Rm ' + rm + ' exists in ' + list(c.map(function (x) { return 'Bldg ' + x[1]; })) + '. Which building do you mean?'], c.slice(0, 3).map(function (x) { return 'Sensor reading for Bldg ' + x[1] + ' Rm ' + rm; })); }
-  if (!b && s.k === 'sol') { var h = HOME[s.name]; inst = h[0]; b = h[1]; rm = h[2]; }
+  if (!b && s.k === 'sol') { var h = homeOf(s); inst = h[0]; b = h[1]; rm = h[2]; }
   if (b && rm) {
     if (!canRoom(inst, b, rm, s)) return ans([deny(s, 'Bldg ' + b + ' Rm ' + rm)], sug(s), { deny: 1 });
     var z = sensorFor(inst, b, rm); return ans([z ? 'Bldg ' + b + ' Rm ' + rm + ': ' + sensTxt(z) : 'Bldg ' + b + ' Rm ' + rm + ' has no BRP room sensor in the sample data. Bldg 412 at Fort Stewart has sensors in every room.'], ['Status of Bldg ' + b + ' Rm ' + rm, 'What is overdue on the UFC clocks?']);
@@ -7487,7 +7509,7 @@ ZONES.forEach(([z,names])=>names.forEach(n=>{
   const blds=[...ids].sort((a,b)=>a-b).map(id=>{
     const gb=R('b|'+n+id);
     let pass=clamp(rdT+gb.f(-8,4),55,100);
-    if(n==='Fort Stewart'&&id===412)pass=82;
+    if(n==='Fort Stewart'&&id===412)pass=82;/* grid seed only, not a score: Bldg 412 scores 38 of 48 rooms = 79.2%, computed below and carried in BRP_ENT.stb */
     const rooms=clamp(Math.round(target/nb*gb.f(.85,1.15)),12,78);
     const per=Math.ceil(rooms/3);
     const rr=[];
@@ -8273,7 +8295,17 @@ var iname = function (c) { return INAME[c] || c; };
 var CLK = { Emergency: [H, DY], Urgent: [8 * H, 7 * DY], Routine: [24 * H, 30 * DY] };
 var STEP = { request: 'waiting on barracks manager verification', verified: 'waiting on contractor acceptance', accepted: 'accepted', longlead: 'waiting on a long-lead part decision', pulled: 'parts pulled from the cabinet', approval: 'waiting on purchase approval', po: 'part ordered', shipped: 'part shipped', delivered: 'part received', fab: 'part in local fabrication', qa: 'in QA check', scheduled: 'repair scheduled', installed: 'fix installed, waiting on Soldier confirmation', closed: 'closed', New: 'new, not started yet', Accepted: 'accepted by the tech', 'Pending verification': 'waiting on barracks manager verification', 'Awaiting Soldier confirmation': 'fix done, waiting on Soldier confirmation', Verified: 'closed', Assigned: 'assigned', 'In work': 'in work', Fixed: 'fixed', 'Verified by Soldier': 'closed' };
 var CLOSED = /^(closed|Verified|Verified by Soldier|Fixed)$/;
-var HOME = { 'SGT J. Parker': ['STW', '4513', '218'] };
+/* BRP One: the Soldier's room is the signed-in account's home room (BRPONE.ACCTS), so every answer about "my room" uses the same room as the Soldier portal. */
+function homeOf(s) {
+  var u = (s && s.u) || {}, a = null, h = null;
+  try {
+    var O = window.BRPONE || (window.parent !== window && window.parent.BRPONE) || null;
+    var me = O && O.user ? O.user() : null, em = (me && me.email) || u.email;
+    a = O && O.ACCTS ? O.ACCTS.filter(function (x) { return em ? x.email === em : x.name === u.name; })[0] : null;
+  } catch (e) { a = null; }
+  h = (a && a.home) || u.home;
+  return h ? [(a && a.inst) || u.inst || 'STW', String(h[0]), String(h[1])] : ['', '', ''];
+}
 var ENT = /Site lead|Program manager|COR|commander/i;
 var PUB = {
   about: ['BRP keeps every barracks room livable and proves it with a record. Room sensors, door QR reports, inspections to UFC 4-721-01 Appendix A and one operations center carry each problem from the first report to a verified fix.', [['How it works', '#how'], ['Room sensor', '#sensor']]],
@@ -8314,7 +8346,8 @@ function scope() {
   if (u.role === 'Technician') return { k: 'tech', name: u.name, inst: 'STW', u: u };
   return { k: 'ent', u: u };
 }
-function canWO(w, s) { return s.k === 'ent' || (s.k === 'mgr' && w.inst === s.inst) || (s.k === 'tech' && w.tech === s.name) || (s.k === 'sol' && w.sol === s.name); }
+function canWO(w, s) { return s.k === 'ent' || (s.k === 'mgr' && w.inst === s.inst) || (s.k === 'tech' && w.tech === s.name) || (s.k === 'sol' && (w.sol === s.name || inHome(w, s))); }
+function inHome(w, s) { var h = homeOf(s); return !!h[1] && w.inst === h[0] && w.b === h[1] && w.rm === h[2]; }
 function whyNot(w, s) {
   if (s.k === 'pub') return 'I can\'t look up records on the public website. Soldiers and BRP staff sign in to the back office or field tablet to ask about orders, parts and rooms.';
   if (s.k === 'sol') return w.id + ' is not one of your requests. Soldier accounts see only their own room and requests, so ask your barracks manager about other rooms.';
@@ -8323,7 +8356,7 @@ function whyNot(w, s) {
 }
 function canRoom(inst, b, rm, s) {
   if (s.k === 'ent') return true; if (s.k === 'mgr' || s.k === 'tech') return inst === 'STW';
-  if (s.k === 'sol') { var h = HOME[s.name]; return (h && h[1] === b && h[2] === rm) || X.all.some(function (w) { return w.sol === s.name && w.b === b && w.rm === rm; }); }
+  if (s.k === 'sol') { var h = homeOf(s); return (h && h[1] === b && h[2] === rm) || X.all.some(function (w) { return w.sol === s.name && w.b === b && w.rm === rm; }); }
   return false;
 }
 var mine = function (s, open) { return X.all.filter(function (w) { return canWO(w, s) && (!open || w.open); }); };
@@ -8403,7 +8436,7 @@ function ents(q, s) {
   m = /\b(?:rm|room)\.?\s*#?\s*(\d{3}|\d[a-p]|mech)\b/i.exec(q); if (m) e.rm = m[1].toUpperCase().replace('MECH', 'Mech');
   if (!e.b && !e.inst) { for (var i = 0; i < D.insts.length; i++) { var nm = D.insts[i][0], sh = nm.replace(/^(Fort|Camp|USAG|Joint Base) /, '').toLowerCase(); if (q.toLowerCase().indexOf(sh) >= 0 || (D.insts[i][1] && new RegExp('\\b' + D.insts[i][1] + '\\b', 'i').test(q)) || (/jblm/i.test(q) && /Lewis/.test(nm))) { e.iname = nm; e.inst = D.insts[i][1] || null; break; } } }
   var lq = q.toLowerCase(); e.parts = [];
-  if (s.k === 'sol' && /\bmy room\b/.test(lq) && !e.b) { var h = HOME[s.name]; e.inst = h[0]; e.b = h[1]; e.rm = h[2]; }
+  if (s.k === 'sol' && /\bmy room\b/.test(lq) && !e.b) { var h = homeOf(s); e.inst = h[0]; e.b = h[1]; e.rm = h[2]; }
   Object.keys(D.part).forEach(function (k) { if (lq.indexOf(k.toLowerCase()) >= 0) e.parts.push(k); });
   if (!e.parts.length) Object.keys(PWORDS).forEach(function (w) { if (lq.indexOf(w) >= 0) e.parts = e.parts.concat(PWORDS[w]); });
   if (/\bptac\b/i.test(q)) e.parts = ['PTAC-12K'];
@@ -8648,7 +8681,7 @@ function reqAns(r, s) {
 function part(w, p, e, s) {
   if (p) { var pw = X.wo[p.wo]; return ans([poTxt(p).replace(/^/, 'PO ' + p.id + ' covers ').replace(' on ' + p.id, '') + ' The order total is ' + money(p.total) + '.' + (pw ? ' It supplies ' + pw.id + ' at ' + place(pw) + '.' : ' It restocks the ' + iname(p.inst) + ' parts cage.')], pw ? ['Tell me about ' + pw.id, 'When will ' + pw.id + ' be fixed?'] : sug(s)); }
   var ws = w ? [w] : mine(s, true).filter(function (x) { return x.po.some(function (i) { return X.po[i] && !X.po[i].rcv; }); });
-  if (!w && s.k === 'sol') { var h = HOME[s.name]; ws.sort(function (a, b) { return (b.b === h[1] && b.rm === h[2]) - (a.b === h[1] && a.rm === h[2]); }); }
+  if (!w && s.k === 'sol') { var h = homeOf(s); ws.sort(function (a, b) { return (b.b === h[1] && b.rm === h[2]) - (a.b === h[1] && a.rm === h[2]); }); }
   if (!w && (s.k === 'mgr' || s.k === 'ent')) return onorder(e, s);
   if (!w && s.k === 'tech') { var tq = X.treq.filter(function (r) { var x = X.wo[r[4]]; return x && canWO(x, s); }); if (!ws.length && tq.length) return reqAns(tq[0], s); }
   if (!ws.length) { var o = mine(s, true); return ans([o.length ? 'None of your open requests has a part on order. ' + o[0].id + ' is ' + o[0].status + '.' : 'You have no open requests with parts on order.'], sug(s)); }
@@ -8661,7 +8694,7 @@ function part(w, p, e, s) {
   return ans(t, ['When will ' + a.id + ' be fixed?', 'Tell me about ' + a.id, 'Tell me about ' + open[0].id]);
 }
 function fixed(w, s) {
-  if (!w && s.k === 'sol') { var h = HOME[s.name]; w = X.all.filter(function (x) { return x.sol === s.name && x.open && x.b === h[1] && x.rm === h[2]; })[0] || mine(s, true)[0]; if (!w) return ans(['You have no open requests. Report a problem from the Soldier portal or the door QR code.'], sug(s)); }
+  if (!w && s.k === 'sol') { var h = homeOf(s); w = X.all.filter(function (x) { return canWO(x, s) && x.open && x.b === h[1] && x.rm === h[2]; })[0] || mine(s, true)[0]; if (!w) return ans(['You have no open requests. Report a problem from the Soldier portal or the door QR code.'], sug(s)); }
   if (!w) return ans(['Tell me which order or room you mean, for example "When will WO-24292 be fixed?"'], sug(s));
   if (!w.open) return ans([w.id + ' at ' + place(w) + ' is closed' + (w.end ? ' as of ' + fdt(w.end) : '') + '.'], ['Tell me about ' + w.id]);
   var c = clock(w), t = ['Status of ' + w.id + ' at ' + place(w) + ': ' + w.status + '. ' + next(w), 'The UFC 4-721-01 clock for ' + w.pri + ' work is ' + clockTxt(w) + '.'];
@@ -8687,7 +8720,7 @@ function assigned(w, s, e) {
 function sensor(w, e, s) {
   var inst = w ? w.inst : e.inst || 'STW', b = w ? w.b : e.b, rm = w ? w.rm : e.rm;
   if (!b && rm) { var c = roomCands(rm, s); if (c.length === 1) { inst = c[0][0]; b = c[0][1]; } else if (c.length > 1) return ans(['Rm ' + rm + ' exists in ' + list(c.map(function (x) { return 'Bldg ' + x[1]; })) + '. Which building do you mean?'], c.slice(0, 3).map(function (x) { return 'Sensor reading for Bldg ' + x[1] + ' Rm ' + rm; })); }
-  if (!b && s.k === 'sol') { var h = HOME[s.name]; inst = h[0]; b = h[1]; rm = h[2]; }
+  if (!b && s.k === 'sol') { var h = homeOf(s); inst = h[0]; b = h[1]; rm = h[2]; }
   if (b && rm) {
     if (!canRoom(inst, b, rm, s)) return ans([deny(s, 'Bldg ' + b + ' Rm ' + rm)], sug(s), { deny: 1 });
     var z = sensorFor(inst, b, rm); return ans([z ? 'Bldg ' + b + ' Rm ' + rm + ': ' + sensTxt(z) : 'Bldg ' + b + ' Rm ' + rm + ' has no BRP room sensor in the sample data. Bldg 412 at Fort Stewart has sensors in every room.'], ['Status of Bldg ' + b + ' Rm ' + rm, 'What is overdue on the UFC clocks?']);
@@ -9415,7 +9448,17 @@ var iname = function (c) { return INAME[c] || c; };
 var CLK = { Emergency: [H, DY], Urgent: [8 * H, 7 * DY], Routine: [24 * H, 30 * DY] };
 var STEP = { request: 'waiting on barracks manager verification', verified: 'waiting on contractor acceptance', accepted: 'accepted', longlead: 'waiting on a long-lead part decision', pulled: 'parts pulled from the cabinet', approval: 'waiting on purchase approval', po: 'part ordered', shipped: 'part shipped', delivered: 'part received', fab: 'part in local fabrication', qa: 'in QA check', scheduled: 'repair scheduled', installed: 'fix installed, waiting on Soldier confirmation', closed: 'closed', New: 'new, not started yet', Accepted: 'accepted by the tech', 'Pending verification': 'waiting on barracks manager verification', 'Awaiting Soldier confirmation': 'fix done, waiting on Soldier confirmation', Verified: 'closed', Assigned: 'assigned', 'In work': 'in work', Fixed: 'fixed', 'Verified by Soldier': 'closed' };
 var CLOSED = /^(closed|Verified|Verified by Soldier|Fixed)$/;
-var HOME = { 'SGT J. Parker': ['STW', '4513', '218'] };
+/* BRP One: the Soldier's room is the signed-in account's home room (BRPONE.ACCTS), so every answer about "my room" uses the same room as the Soldier portal. */
+function homeOf(s) {
+  var u = (s && s.u) || {}, a = null, h = null;
+  try {
+    var O = window.BRPONE || (window.parent !== window && window.parent.BRPONE) || null;
+    var me = O && O.user ? O.user() : null, em = (me && me.email) || u.email;
+    a = O && O.ACCTS ? O.ACCTS.filter(function (x) { return em ? x.email === em : x.name === u.name; })[0] : null;
+  } catch (e) { a = null; }
+  h = (a && a.home) || u.home;
+  return h ? [(a && a.inst) || u.inst || 'STW', String(h[0]), String(h[1])] : ['', '', ''];
+}
 var ENT = /Site lead|Program manager|COR|commander/i;
 var PUB = {
   about: ['BRP keeps every barracks room livable and proves it with a record. Room sensors, door QR reports, inspections to UFC 4-721-01 Appendix A and one operations center carry each problem from the first report to a verified fix.', [['How it works', '#how'], ['Room sensor', '#sensor']]],
@@ -9456,7 +9499,8 @@ function scope() {
   if (u.role === 'Technician') return { k: 'tech', name: u.name, inst: 'STW', u: u };
   return { k: 'ent', u: u };
 }
-function canWO(w, s) { return s.k === 'ent' || (s.k === 'mgr' && w.inst === s.inst) || (s.k === 'tech' && w.tech === s.name) || (s.k === 'sol' && w.sol === s.name); }
+function canWO(w, s) { return s.k === 'ent' || (s.k === 'mgr' && w.inst === s.inst) || (s.k === 'tech' && w.tech === s.name) || (s.k === 'sol' && (w.sol === s.name || inHome(w, s))); }
+function inHome(w, s) { var h = homeOf(s); return !!h[1] && w.inst === h[0] && w.b === h[1] && w.rm === h[2]; }
 function whyNot(w, s) {
   if (s.k === 'pub') return 'I can\'t look up records on the public website. Soldiers and BRP staff sign in to the back office or field tablet to ask about orders, parts and rooms.';
   if (s.k === 'sol') return w.id + ' is not one of your requests. Soldier accounts see only their own room and requests, so ask your barracks manager about other rooms.';
@@ -9465,7 +9509,7 @@ function whyNot(w, s) {
 }
 function canRoom(inst, b, rm, s) {
   if (s.k === 'ent') return true; if (s.k === 'mgr' || s.k === 'tech') return inst === 'STW';
-  if (s.k === 'sol') { var h = HOME[s.name]; return (h && h[1] === b && h[2] === rm) || X.all.some(function (w) { return w.sol === s.name && w.b === b && w.rm === rm; }); }
+  if (s.k === 'sol') { var h = homeOf(s); return (h && h[1] === b && h[2] === rm) || X.all.some(function (w) { return w.sol === s.name && w.b === b && w.rm === rm; }); }
   return false;
 }
 var mine = function (s, open) { return X.all.filter(function (w) { return canWO(w, s) && (!open || w.open); }); };
@@ -9545,7 +9589,7 @@ function ents(q, s) {
   m = /\b(?:rm|room)\.?\s*#?\s*(\d{3}|\d[a-p]|mech)\b/i.exec(q); if (m) e.rm = m[1].toUpperCase().replace('MECH', 'Mech');
   if (!e.b && !e.inst) { for (var i = 0; i < D.insts.length; i++) { var nm = D.insts[i][0], sh = nm.replace(/^(Fort|Camp|USAG|Joint Base) /, '').toLowerCase(); if (q.toLowerCase().indexOf(sh) >= 0 || (D.insts[i][1] && new RegExp('\\b' + D.insts[i][1] + '\\b', 'i').test(q)) || (/jblm/i.test(q) && /Lewis/.test(nm))) { e.iname = nm; e.inst = D.insts[i][1] || null; break; } } }
   var lq = q.toLowerCase(); e.parts = [];
-  if (s.k === 'sol' && /\bmy room\b/.test(lq) && !e.b) { var h = HOME[s.name]; e.inst = h[0]; e.b = h[1]; e.rm = h[2]; }
+  if (s.k === 'sol' && /\bmy room\b/.test(lq) && !e.b) { var h = homeOf(s); e.inst = h[0]; e.b = h[1]; e.rm = h[2]; }
   Object.keys(D.part).forEach(function (k) { if (lq.indexOf(k.toLowerCase()) >= 0) e.parts.push(k); });
   if (!e.parts.length) Object.keys(PWORDS).forEach(function (w) { if (lq.indexOf(w) >= 0) e.parts = e.parts.concat(PWORDS[w]); });
   if (/\bptac\b/i.test(q)) e.parts = ['PTAC-12K'];
@@ -9790,7 +9834,7 @@ function reqAns(r, s) {
 function part(w, p, e, s) {
   if (p) { var pw = X.wo[p.wo]; return ans([poTxt(p).replace(/^/, 'PO ' + p.id + ' covers ').replace(' on ' + p.id, '') + ' The order total is ' + money(p.total) + '.' + (pw ? ' It supplies ' + pw.id + ' at ' + place(pw) + '.' : ' It restocks the ' + iname(p.inst) + ' parts cage.')], pw ? ['Tell me about ' + pw.id, 'When will ' + pw.id + ' be fixed?'] : sug(s)); }
   var ws = w ? [w] : mine(s, true).filter(function (x) { return x.po.some(function (i) { return X.po[i] && !X.po[i].rcv; }); });
-  if (!w && s.k === 'sol') { var h = HOME[s.name]; ws.sort(function (a, b) { return (b.b === h[1] && b.rm === h[2]) - (a.b === h[1] && a.rm === h[2]); }); }
+  if (!w && s.k === 'sol') { var h = homeOf(s); ws.sort(function (a, b) { return (b.b === h[1] && b.rm === h[2]) - (a.b === h[1] && a.rm === h[2]); }); }
   if (!w && (s.k === 'mgr' || s.k === 'ent')) return onorder(e, s);
   if (!w && s.k === 'tech') { var tq = X.treq.filter(function (r) { var x = X.wo[r[4]]; return x && canWO(x, s); }); if (!ws.length && tq.length) return reqAns(tq[0], s); }
   if (!ws.length) { var o = mine(s, true); return ans([o.length ? 'None of your open requests has a part on order. ' + o[0].id + ' is ' + o[0].status + '.' : 'You have no open requests with parts on order.'], sug(s)); }
@@ -9803,7 +9847,7 @@ function part(w, p, e, s) {
   return ans(t, ['When will ' + a.id + ' be fixed?', 'Tell me about ' + a.id, 'Tell me about ' + open[0].id]);
 }
 function fixed(w, s) {
-  if (!w && s.k === 'sol') { var h = HOME[s.name]; w = X.all.filter(function (x) { return x.sol === s.name && x.open && x.b === h[1] && x.rm === h[2]; })[0] || mine(s, true)[0]; if (!w) return ans(['You have no open requests. Report a problem from the Soldier portal or the door QR code.'], sug(s)); }
+  if (!w && s.k === 'sol') { var h = homeOf(s); w = X.all.filter(function (x) { return canWO(x, s) && x.open && x.b === h[1] && x.rm === h[2]; })[0] || mine(s, true)[0]; if (!w) return ans(['You have no open requests. Report a problem from the Soldier portal or the door QR code.'], sug(s)); }
   if (!w) return ans(['Tell me which order or room you mean, for example "When will WO-24292 be fixed?"'], sug(s));
   if (!w.open) return ans([w.id + ' at ' + place(w) + ' is closed' + (w.end ? ' as of ' + fdt(w.end) : '') + '.'], ['Tell me about ' + w.id]);
   var c = clock(w), t = ['Status of ' + w.id + ' at ' + place(w) + ': ' + w.status + '. ' + next(w), 'The UFC 4-721-01 clock for ' + w.pri + ' work is ' + clockTxt(w) + '.'];
@@ -9829,7 +9873,7 @@ function assigned(w, s, e) {
 function sensor(w, e, s) {
   var inst = w ? w.inst : e.inst || 'STW', b = w ? w.b : e.b, rm = w ? w.rm : e.rm;
   if (!b && rm) { var c = roomCands(rm, s); if (c.length === 1) { inst = c[0][0]; b = c[0][1]; } else if (c.length > 1) return ans(['Rm ' + rm + ' exists in ' + list(c.map(function (x) { return 'Bldg ' + x[1]; })) + '. Which building do you mean?'], c.slice(0, 3).map(function (x) { return 'Sensor reading for Bldg ' + x[1] + ' Rm ' + rm; })); }
-  if (!b && s.k === 'sol') { var h = HOME[s.name]; inst = h[0]; b = h[1]; rm = h[2]; }
+  if (!b && s.k === 'sol') { var h = homeOf(s); inst = h[0]; b = h[1]; rm = h[2]; }
   if (b && rm) {
     if (!canRoom(inst, b, rm, s)) return ans([deny(s, 'Bldg ' + b + ' Rm ' + rm)], sug(s), { deny: 1 });
     var z = sensorFor(inst, b, rm); return ans([z ? 'Bldg ' + b + ' Rm ' + rm + ': ' + sensTxt(z) : 'Bldg ' + b + ' Rm ' + rm + ' has no BRP room sensor in the sample data. Bldg 412 at Fort Stewart has sensors in every room.'], ['Status of Bldg ' + b + ' Rm ' + rm, 'What is overdue on the UFC clocks?']);
