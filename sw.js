@@ -1,5 +1,5 @@
-/* BRP One offline cache (app pages only), version 1f3895eb85-4 */
-const C='brp-one-1f3895eb85-4';
+/* BRP One offline cache (app pages only), version 64879974a7-4 */
+const C='brp-one-64879974a7-4';
 const CORE=['./','index.html','manifest.webmanifest','icons/icon-180.png','icons/icon-192.png','icons/icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
