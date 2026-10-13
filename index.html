@@ -852,7 +852,7 @@ body:has(.fnav) #toast{bottom:112px}
 'use strict';
 var APP = 'tablet', PW = 'BRPdemo2026!', SK = 'brp-v1-session-' + APP;
 var APPS = { tablet: 'the BRP Field Tablet', ops: 'the BRP back office', dashboard: 'the Barracks Command Dashboard' };
-var ACCTS = [{"email": "soldier@brp.demo", "role": "Soldier", "name": "SGT J. Parker", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "tech@brp.demo", "role": "Technician", "name": "D. Reyes", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "manager@brp.demo", "role": "Barracks manager", "name": "D. Hargrove", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "sitelead@brp.demo", "role": "Site lead", "name": "R. Okafor", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "pm@brp.demo", "role": "Program manager", "name": "M. Brennan", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "buyer@brp.demo", "role": "Buyer", "name": "K. Lindqvist", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "cor@brp.demo", "role": "Government COR", "name": "L. Whitfield", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "commander@brp.demo", "role": "Garrison commander", "name": "COL A. Grant", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "dpw@brp.demo", "role": "Garrison DPW", "name": "G. Holt", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "admin@brp.demo", "role": "Admin", "name": "BRP admin", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}];
+var ACCTS = [{"email": "soldier@brp.demo", "role": "Soldier", "name": "SGT J. Parker", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "tech@brp.demo", "role": "Technician", "name": "D. Reyes", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "manager@brp.demo", "role": "Barracks manager", "name": "D. Hargrove", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "sitelead@brp.demo", "role": "Site lead", "name": "R. Okafor", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "pm@brp.demo", "role": "Program manager", "name": "M. Brennan", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "buyer@brp.demo", "role": "Buyer", "name": "K. Lindqvist", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "cor@brp.demo", "role": "Government COR", "name": "L. Whitfield", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "commander@brp.demo", "role": "Garrison commander", "name": "COL A. Grant", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "dpw@brp.demo", "role": "Garrison DPW", "name": "G. Holt", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "admin@brp.demo", "role": "Admin", "name": "BRP admin", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "owner@brp.demo", "role": "Admin", "name": "Owner (demo)", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}];
 var find = function (e) { e = String(e || '').trim().toLowerCase(); for (var i = 0; i < ACCTS.length; i++) if (ACCTS[i].email === e) return ACCTS[i]; return null; };
 var pub = function (a) { return a ? { email: a.email, role: a.role, name: a.name } : null; };
 var root = document.documentElement;
@@ -3178,7 +3178,7 @@ O.register('tablet', {
 'use strict';
 var APP = 'ops', PW = 'BRPdemo2026!', SK = 'brp-v1-session-' + APP;
 var APPS = { tablet: 'the BRP Field Tablet', ops: 'the BRP back office', dashboard: 'the Barracks Command Dashboard' };
-var ACCTS = [{"email": "soldier@brp.demo", "role": "Soldier", "name": "SGT J. Parker", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "tech@brp.demo", "role": "Technician", "name": "D. Reyes", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "manager@brp.demo", "role": "Barracks manager", "name": "D. Hargrove", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "sitelead@brp.demo", "role": "Site lead", "name": "R. Okafor", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "pm@brp.demo", "role": "Program manager", "name": "M. Brennan", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "buyer@brp.demo", "role": "Buyer", "name": "K. Lindqvist", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "cor@brp.demo", "role": "Government COR", "name": "L. Whitfield", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "commander@brp.demo", "role": "Garrison commander", "name": "COL A. Grant", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "dpw@brp.demo", "role": "Garrison DPW", "name": "G. Holt", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "admin@brp.demo", "role": "Admin", "name": "BRP admin", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}];
+var ACCTS = [{"email": "soldier@brp.demo", "role": "Soldier", "name": "SGT J. Parker", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "tech@brp.demo", "role": "Technician", "name": "D. Reyes", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "manager@brp.demo", "role": "Barracks manager", "name": "D. Hargrove", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "sitelead@brp.demo", "role": "Site lead", "name": "R. Okafor", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "pm@brp.demo", "role": "Program manager", "name": "M. Brennan", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "buyer@brp.demo", "role": "Buyer", "name": "K. Lindqvist", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "cor@brp.demo", "role": "Government COR", "name": "L. Whitfield", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "commander@brp.demo", "role": "Garrison commander", "name": "COL A. Grant", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "dpw@brp.demo", "role": "Garrison DPW", "name": "G. Holt", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "admin@brp.demo", "role": "Admin", "name": "BRP admin", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "owner@brp.demo", "role": "Admin", "name": "Owner (demo)", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}];
 var find = function (e) { e = String(e || '').trim().toLowerCase(); for (var i = 0; i < ACCTS.length; i++) if (ACCTS[i].email === e) return ACCTS[i]; return null; };
 var pub = function (a) { return a ? { email: a.email, role: a.role, name: a.name } : null; };
 var root = document.documentElement;
@@ -7335,7 +7335,7 @@ html.pf-open .toasts{right:auto;left:16px}
   var SK = 'brp-demo-session-' + APP;
   var APPS = { tablet: 'the BRP Field Tablet', ops: 'BRP Ops (back office)', dashboard: 'the Barracks Command Dashboard' };
   // One shared set of demo accounts across the three BRP prototypes.
-  var ACCTS = [{"email": "soldier@brp.demo", "role": "Soldier", "name": "SGT J. Parker", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "tech@brp.demo", "role": "Technician", "name": "D. Reyes", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "manager@brp.demo", "role": "Barracks manager", "name": "D. Hargrove", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "sitelead@brp.demo", "role": "Site lead", "name": "R. Okafor", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "pm@brp.demo", "role": "Program manager", "name": "M. Brennan", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "buyer@brp.demo", "role": "Buyer", "name": "K. Lindqvist", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "cor@brp.demo", "role": "Government COR", "name": "L. Whitfield", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "commander@brp.demo", "role": "Garrison commander", "name": "COL A. Grant", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "dpw@brp.demo", "role": "Garrison DPW", "name": "G. Holt", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "admin@brp.demo", "role": "Admin", "name": "BRP admin", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}];
+  var ACCTS = [{"email": "soldier@brp.demo", "role": "Soldier", "name": "SGT J. Parker", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "tech@brp.demo", "role": "Technician", "name": "D. Reyes", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "manager@brp.demo", "role": "Barracks manager", "name": "D. Hargrove", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "sitelead@brp.demo", "role": "Site lead", "name": "R. Okafor", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "pm@brp.demo", "role": "Program manager", "name": "M. Brennan", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "buyer@brp.demo", "role": "Buyer", "name": "K. Lindqvist", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "cor@brp.demo", "role": "Government COR", "name": "L. Whitfield", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "commander@brp.demo", "role": "Garrison commander", "name": "COL A. Grant", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "dpw@brp.demo", "role": "Garrison DPW", "name": "G. Holt", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "admin@brp.demo", "role": "Admin", "name": "BRP admin", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}, {"email": "owner@brp.demo", "role": "Admin", "name": "Owner (demo)", "apps": {"tablet": "BRP One", "ops": "BRP One", "dashboard": "BRP One"}}];
   var find = function (e) { e = String(e || '').trim().toLowerCase(); for (var i = 0; i < ACCTS.length; i++) if (ACCTS[i].email === e) return ACCTS[i]; return null; };
   var pub = function (a) { return a ? { email: a.email, role: a.role, name: a.name, use: a.apps[APP] } : null; };
   var root = document.documentElement;
@@ -9150,7 +9150,8 @@ var ACCTS = [
   { email: 'cor@brp.demo', role: 'Government COR', name: 'L. Whitfield', inst: null },
   { email: 'commander@brp.demo', role: 'Garrison commander', name: 'COL A. Grant', inst: null },
   { email: 'dpw@brp.demo', role: 'Garrison DPW', name: 'G. Holt', inst: 'STW' },
-  { email: 'admin@brp.demo', role: 'Admin', name: 'BRP admin', inst: null }
+  { email: 'admin@brp.demo', role: 'Admin', name: 'BRP admin', inst: null },
+  { email: 'owner@brp.demo', role: 'Admin', name: 'Owner (demo)', inst: null }
 ];
 var SOLHOME = ACCTS[0];
 var ONFILE = '[email on file]';
@@ -10082,6 +10083,7 @@ var WS = [
   { id: 'erp', label: 'ERP', roles: ['Site lead', 'Program manager', 'Buyer', 'Government COR', 'Garrison DPW', 'Admin'], why: 'ERP search is for site leads, the program manager, buyers, and read-only for the COR, the garrison DPW and BRP administrators.' },
   { id: 'satisfaction', label: 'Satisfaction', roles: ['Garrison commander', 'Barracks manager', 'Site lead', 'Program manager'], why: 'Satisfaction is for the garrison commander, barracks managers, site leads and the program manager. Soldiers rate their own fixes from the Soldier portal.' },
   { id: 'outbox', label: 'Email outbox', roles: ['Site lead', 'Program manager', 'Government COR'], why: 'The Email outbox is for site leads, the program manager, the COR (read-only) and BRP administrators.' },
+  { id: 'command', label: 'Command', roles: ['Admin'], why: 'Command is the owner view: decisions, tasks, agent approvals and the Claude thread.' },
   { id: 'admin', label: 'Admin', roles: ['Admin'], why: 'Admin is for BRP administrators.' },
   { id: 'purchasing', label: 'Purchasing', roles: ['Admin'], why: 'Purchasing is for BRP administrators. It holds the program purchase list, its order status and draft POs.' }
 ];
@@ -10095,7 +10097,7 @@ var OMODS = {
   'Garrison DPW': ['setup']
 };
 var OMOD_NAME = { portal: 'Soldier portal', wo: 'Work orders', req: 'Requisitions', po: 'Purchase orders', inv: 'Inventory', ven: 'Vendors', fleet: 'Fleet', fee: 'Cost and fee', setup: 'Setup and intake' };
-var ROLE_HOME = { 'Government COR': ['office', 'dashboard', 'erp', 'outbox'], 'Garrison commander': ['dashboard', 'satisfaction'], 'Garrison DPW': ['office', 'dashboard', 'erp'], 'Admin': ['admin', 'purchasing', 'erp'] };
+var ROLE_HOME = { 'Government COR': ['office', 'dashboard', 'erp', 'outbox'], 'Garrison commander': ['dashboard', 'satisfaction'], 'Garrison DPW': ['office', 'dashboard', 'erp'], 'Admin': ['command', 'admin', 'purchasing', 'erp'] };
 function myWS() {
   if (!U) return [];
   var ids = ROLE_HOME[U.role] || WS.filter(function (w) { return w.roles.indexOf(U.role) >= 0; }).map(function (w) { return w.id; });
@@ -10325,7 +10327,7 @@ function show(w, sub) {
     });
   } else {
     var v = viewEl();
-    ({ erp: vModule, satisfaction: vModule, purchasing: vModule, outbox: vOutbox, admin: vAdmin })[w.id](v, w);
+    ({ erp: vModule, satisfaction: vModule, purchasing: vModule, outbox: vOutbox, admin: vAdmin, command: vCommand })[w.id](v, w);
     if (!same) { try { v.scrollTop = 0; } catch (e) {} }
   }
   renderStrip();
@@ -10405,6 +10407,15 @@ function vOutbox(v) { var ro = U && U.role === 'Government COR'; v.innerHTML = '
 doc.addEventListener('change', function (e) { if (e.target.id === 'ob-f') { outboxFilter = e.target.value; var ob = $('#ob'); if (ob) ob.innerHTML = outboxHTML(); var s = $('#ob-f'); if (s) s.focus(); } });
 
 /* ---------- Admin ---------- */
+/* ---------- Command (Admin): the owner portal at backend/hq/. Same session key, so it opens signed in. ---------- */
+var COMMAND_URL = 'https://andrewjvalkenburg1-alt.github.io/BRP/backend/hq/';
+function vCommand(v) {
+  var onSite = /github\.io$/.test(location.hostname) && location.pathname.indexOf('/BRP/') === 0;
+  var href = onSite ? location.pathname.slice(0, location.pathname.indexOf('/BRP/') + 5) + 'backend/hq/' : COMMAND_URL;
+  v.innerHTML = '<div class="vin">' + head('', 'Command', 'Command', 'Your decisions, every task by owner, agent approvals, systems and the Claude thread, in one place.') +
+    '<p><a class="btn" href="' + esc(href) + '"' + (onSite ? '' : ' target="_blank" rel="noopener"') + '>Open Command</a></p>' +
+    '<p class="meta">' + (onSite ? 'Opens in this window, already signed in.' : 'Opens the live app site in a new tab. Sign in there with this account.') + '</p></div>';
+}
 function vAdmin(v) {
   var all = O.alerts(), persist = O.persistent();
   v.innerHTML = '<div class="vin">' + head('01', 'Admin', 'Admin', 'Alerts, the Email outbox, who gets tagged and the sample data store for every workspace.') +
