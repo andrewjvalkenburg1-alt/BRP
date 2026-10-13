@@ -1,0 +1,93 @@
+{
+  "about": "Config for reply-checker.mjs. Applies to every BRP agent that talks to people (today: soldier_liaison, disabled). Patterns are JavaScript regular expressions, matched case-insensitively against one sentence at a time.",
+  "applies_to": ["soldier_liaison"],
+  "model": "claude-sonnet-5-5",
+  "model_reason": "A cheaper model than the agent's own is fine for a second read, but this check guards safety and honesty lines, so it uses Sonnet 5.5 rather than Haiku. The rules below run first and win over the model when they disagree.",
+  "max_tokens": 2000,
+  "on_model_error": "rules_only",
+  "fallback_reply": "I will confirm that with the program manager and come back to you.",
+  "safety_context": "\\b(co|carbon monoxide|smoke|fire|gas|alarm|spark|sparking|mold|911|988|838255|crisis|vomit|throwing up|headache|dizzy|breath|breathing|chest|danger|suicid|hurt|harm|injur|passed out|weapon|assault|harass|better off)\\b",
+  "categories": {
+    "capability": {
+      "label": "States what another person, office, line or system can do, when, or how fast",
+      "patterns": [
+        "\\b(they|he|she)\\s+(are|is|'re|'s)\\s+there\\b",
+        "\\b(any ?time|24/7|24 hours a day|around the clock|right away for you)\\b",
+        "\\byou can (ask|call|contact|reach|email|text|message|talk to|go to|check with)\\b",
+        "\\b(crisis line|hotline|admin console|console|housing office|legal assistance|claims office|chain of command|staff duty|cq|vendor|site lead|program manager|barracks manager|technician|tech)\\b[^.]*\\b(can (help|see|show|fix|advise|tell|answer|change|approve)|will (help|call|fix|come|see|show)|is able to|are able to|handles|lets you|shows)\\b"
+      ]
+    },
+    "authority": {
+      "label": "States who decides or approves something",
+      "patterns": [
+        "\\b[\\w.]+(\\s[\\w.]+)?'s call\\b",
+        "\\b(decides?|deciding|the decision is (his|hers|theirs|the [a-z ]+'s)|up to (the|him|her|them))\\b",
+        "\\b(has|have) (the )?final say\\b",
+        "\\b(can|may) (verify|sign off|approve)\\b"
+      ],
+      "allowed": [
+        "\\bsite lead\\b[^.]*\\b(approv|backorder)",
+        "\\b(over|above)\\b[^.]*\\b(limit|cap|\\$500|\\$2,500)\\b[^.]*\\b(site lead|program manager)\\b",
+        "\\bprogram manager\\b[^.]*\\b(approv|above the site lead|over \\$2,500)",
+        "\\b(unit|housing office)\\b[^.]*\\bdecide",
+        "\\bbarracks manager and (the )?technician decide what (gets|is) done\\b",
+        "\\bbarracks manager confirms the priority\\b",
+        "\\b(I|agents?) (do not|don't|never|cannot|can't) approve\\b"
+      ]
+    },
+    "safety": {
+      "label": "Safety advice beyond the pack's script",
+      "context_only": true,
+      "patterns": [
+        "\\b(is|are|it's|that's|its)\\s+(fine|okay|ok|probably (nothing|false|fine|broken))\\b",
+        "\\b(it is|it's|you're|you are|room is) (safe|fine|usable)\\b(?<!say it's safe)(?<!say it is safe)",
+        "\\bwindows? (open|down|cracked)\\b",
+        "\\b(stay|wait|sleep) (in|inside) (the|your) (room|car|building)\\b",
+        "\\b(clean|wipe|bleach|scrub|spray|vacuum)\\b",
+        "\\b(confidential|secret|anonymous|won't tell|will not tell)\\b",
+        "\\b(probably|likely) (a false alarm|nothing|fine|broken|the battery)\\b"
+      ],
+      "script": [
+        "Get out of the room to fresh air now and call 911.",
+        "Do not go back in until responders or the barracks manager say it is safe.",
+        "Call or text the Veterans and Military Crisis Line: dial 988 then press 1, or text 838255.",
+        "If you are in danger now, call 911.",
+        "Call 911 now."
+      ],
+      "restore": [
+        { "when": "\\b(co|carbon monoxide|smoke|fire|gas|spark|sparking|alarm)\\b", "line": "Get out of the room to fresh air now and call 911. Do not go back in until responders or the barracks manager say it is safe." },
+        { "when": "\\b(988|838255|crisis|suicid|better off|harm)\\b", "line": "Call or text the Veterans and Military Crisis Line: dial 988 then press 1, or text 838255. If you are in danger now, call 911." },
+        { "when": "\\b911\\b", "line": "Call 911 now." }
+      ]
+    },
+    "action_claim": {
+      "label": "Says an action happened, or will happen, with no action record in the conversation",
+      "patterns": [
+        "\\bI(?:'ve| have| just)? (?:flagged|escalated|paged|sent|logged|notified|told|passed|forwarded|opened|cued|asked|booked|ordered|reported|alerted)\\b",
+        "\\bI(?:'ll| will|'m going to| am going to) (?:flag|escalate|page|send|log|notify|tell|pass|forward|open|cue|ask|book|order|let|report|alert|make sure)\\b",
+        "\\bI(?:'m| am) (?:paging|getting|sending|escalating|flagging|opening|notifying|alerting|logging|cueing)\\b",
+        "\\b(?:already|has been|have been|was|were) (?:paged|notified|escalated|sent|logged|flagged|told|alerted|booked|ordered)\\b",
+        "\\b(?:is|are) (?:now )?with (?:the )?(?:site lead|program manager|barracks manager|technician|on-call|andrew|chain of command|buyer)\\b",
+        "\\bso (?:the )?[a-z ]+ (?:know|knows|is aware|are aware)\\b"
+      ],
+      "skip_if": "^(if|when|once|as soon as|after)\\b|\\?$|^(do you want|would you like|want me to|i can |shall i)",
+      "roles": {
+        "site_lead": "\\bsite lead\\b",
+        "program_manager": "\\bprogram manager\\b",
+        "barracks_manager": "\\bbarracks manager\\b",
+        "technician": "\\b(technician|tech)\\b",
+        "on_call_human": "\\b(on-call|on call|a person|someone)\\b",
+        "chain_of_command": "\\b(chain of command|your unit|cq|staff duty)\\b",
+        "andrew": "\\bandrew\\b",
+        "buyer": "\\bbuyer\\b"
+      },
+      "verbs": {
+        "intake_create": "\\b(report|intake)\\b",
+        "escalate": "\\b(page|paged|paging|escalat|flag|person|on-call|notif|alert|know)\\w*",
+        "note": "\\b(note|log)\\w*",
+        "quote_request": "\\bquote\\b",
+        "human_task": "\\b(task|cue|book|ask)\\w*"
+      }
+    }
+  }
+}

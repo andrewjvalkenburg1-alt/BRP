@@ -1,0 +1,536 @@
+{
+ "exported_at": "2026-10-13T04:09:45.994Z",
+ "collections": {
+  "agents": {
+   "books": {
+    "name": "Bookkeeping, Tax, Legal",
+    "level": 0,
+    "mode": "Off",
+    "evidence": "Placeholder briefs only",
+    "next": "Accounting system, CPA and attorney first"
+   },
+   "brief": {
+    "name": "Commander Brief (Ask BRP)",
+    "level": 1,
+    "mode": "Off",
+    "evidence": "3 of 3 conversations had unbacked claims",
+    "next": "Conversation test 3 with the reply checker"
+   },
+   "buyer": {
+    "name": "Buyer and Dispatch",
+    "level": 2,
+    "mode": "Ready for shadow",
+    "evidence": "Action test 99%. Conversation test 2: one claim made a turn too early.",
+    "next": "Shadow mode once backend and key are in"
+   },
+   "inspect": {
+    "name": "Inspection Scheduler",
+    "level": 2,
+    "mode": "Ready for shadow",
+    "evidence": "Action test 100%",
+    "next": "Shadow mode"
+   },
+   "rooms": {
+    "name": "Room Readiness Planner",
+    "level": 2,
+    "mode": "Ready for shadow",
+    "evidence": "Action test 100%",
+    "next": "Shadow mode"
+   },
+   "sensor": {
+    "name": "Sensor Watch",
+    "level": 2,
+    "mode": "Ready for shadow",
+    "evidence": "Action test 100% (January week)",
+    "next": "Shadow mode; re-test on the cheaper model"
+   },
+   "soldier": {
+    "name": "Soldier Liaison",
+    "level": 1,
+    "mode": "Off",
+    "evidence": "Safety steps right; 3 of 4 conversations had unbacked claims",
+    "next": "Conversation test 3 with the reply checker"
+   }
+  },
+  "decisions": {
+   "d1": {
+    "question": "Should Claude write the xTech white paper v1 now? It is due Oct 19.",
+    "context": "Only a v0 draft exists. Claude will leave out any claim we cannot document.",
+    "options": [
+     "Yes, start now",
+     "No, skip xTech this round"
+    ],
+    "recommended": 0,
+    "sort": "2026-10-14"
+   },
+   "d2": {
+    "question": "Are the two CSM text claims true and documented?",
+    "context": "The draft says BRP helped two posts, and that modernized barracks and funding are authorized as of Oct 1. If either can't be backed up, Claude removes it.",
+    "options": [
+     "Both true, I have proof",
+     "Remove those lines"
+    ],
+    "recommended": 1,
+    "sort": "2026-10-15"
+   },
+   "d3": {
+    "question": "Does the $500 per-order buyer cap stay fixed while weekly caps change?",
+    "context": "Claude assumed it stays fixed. Only the weekly cap moves with the 3-month average.",
+    "options": [
+     "Yes, fixed at $500",
+     "Let it grow with the weekly cap"
+    ],
+    "recommended": 0,
+    "sort": "2026-10-16"
+   },
+   "d4": {
+    "question": "When an installation's 3-month average is above $2,500 a week, who approves the extra?",
+    "context": "A site lead can approve up to $2,500. The kit sends anything above that to the program manager. Weeks run Monday to Sunday, Central time.",
+    "options": [
+     "Program manager approves",
+     "Hold everyone at $2,500"
+    ],
+    "recommended": 0,
+    "sort": "2026-10-16"
+   },
+   "d5": {
+    "question": "Keep \"G. Holt\" as the invented DPW name in the demo?",
+    "context": "It is a made-up demo account name, not a real person.",
+    "options": [
+     "Keep G. Holt",
+     "Use a different name"
+    ],
+    "recommended": 0,
+    "sort": "2026-10-17"
+   },
+   "d6": {
+    "question": "Can agents tell Soldiers \"don't touch or disturb it\" about suspected mold?",
+    "context": "Right now agents only log it, give the humidity standard, and treat breathing trouble as medical. Claude will cite a health source before adding the line.",
+    "options": [
+     "Yes, approve the line",
+     "No, leave it out"
+    ],
+    "recommended": 0,
+    "sort": "2026-10-17"
+   }
+  },
+  "meta": {
+   "sync": {
+    "at": "2026-10-13T04:10:00Z",
+    "at_label": "Oct 13, 11:10 pm Central"
+   }
+  },
+  "systems": {
+   "admin": {
+    "name": "Admin console and ERP",
+    "sort": 3,
+    "status": "Demo mode",
+    "state": "building",
+    "url": "https://andrewjvalkenburg1-alt.github.io/BRP/backend/client/admin.html",
+    "note": "Agent proposals tab added Oct 13"
+   },
+   "agents": {
+    "name": "Operations agents",
+    "sort": 5,
+    "status": "Built, not running",
+    "state": "blocked",
+    "url": "",
+    "note": "Shadow-mode kit tested. Needs backend and API key."
+   },
+   "app": {
+    "name": "BRP One app",
+    "sort": 1,
+    "status": "Live",
+    "state": "live",
+    "url": "https://andrewjvalkenburg1-alt.github.io/BRP/",
+    "note": "Installable on iPhone and iPad from Safari"
+   },
+   "backend": {
+    "name": "Backend database",
+    "sort": 4,
+    "status": "Needs Supabase",
+    "state": "blocked",
+    "url": "",
+    "note": "Built and tested (160 security and limit checks). Not connected yet."
+   },
+   "ios": {
+    "name": "iPhone App Store app",
+    "sort": 6,
+    "status": "Needs Apple account",
+    "state": "blocked",
+    "url": "",
+    "note": "Wrapper built. Needs Apple Developer and a Mac."
+   },
+   "routine": {
+    "name": "Monday status",
+    "sort": 7,
+    "status": "Running",
+    "state": "live",
+    "url": "",
+    "note": "Mondays, first run Oct 19"
+   },
+   "site": {
+    "name": "BRP website",
+    "sort": 2,
+    "status": "Live, hidden from search",
+    "state": "live",
+    "url": "https://andrewjvalkenburg1-alt.github.io/BRP/site/",
+    "note": "Stays hidden until the attorney clears the legal pages"
+   }
+  },
+  "tasks": {
+   "t01": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Accounts",
+    "item": "Connect the Supabase connector",
+    "status": "not_started",
+    "due": "This week",
+    "sort": "2026-10-15",
+    "next": "Make a free Supabase account (Rynoc email), then Settings > Connectors > Supabase. Claude does the rest.",
+    "updated": "2026-10-13"
+   },
+   "t02": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Company",
+    "item": "Send your contact phone and email for documents",
+    "status": "not_started",
+    "due": "ASAP",
+    "sort": "2026-10-14",
+    "next": "Reply in the Barracks thread",
+    "updated": "2026-10-13"
+   },
+   "t03": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Company",
+    "item": "Get Rynoc legal name, UEI and CAGE",
+    "status": "at_risk",
+    "due": "Oct 17",
+    "sort": "2026-10-17",
+    "next": "Needed on the ERDC-CERL and xTech cover pages",
+    "updated": "2026-10-13"
+   },
+   "t04": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Contracts",
+    "item": "Find out who won the Fort Campbell barracks OTA",
+    "status": "not_started",
+    "due": "Oct 17",
+    "sort": "2026-10-17",
+    "next": "Ask the KO or check the SAM award notice",
+    "updated": "2026-10-13"
+   },
+   "t05": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Contracts",
+    "item": "Send the Brigade CSM outreach texts",
+    "status": "waiting",
+    "due": "After decision",
+    "sort": "2026-10-17",
+    "next": "Answer the CSM claims decision above, then send",
+    "updated": "2026-10-13"
+   },
+   "t06": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Accounts",
+    "item": "Pick a domain name for company email",
+    "status": "not_started",
+    "due": "This week",
+    "sort": "2026-10-17",
+    "next": "Tell Claude the name you want",
+    "updated": "2026-10-13"
+   },
+   "t07": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Accounts",
+    "item": "Create an Anthropic Console account and API key",
+    "status": "not_started",
+    "due": "Oct 20",
+    "sort": "2026-10-20",
+    "next": "Add the key in Project settings as ANTHROPIC_API_KEY. Never paste it in chat.",
+    "updated": "2026-10-13"
+   },
+   "t08": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Company",
+    "item": "Pick an attorney",
+    "status": "not_started",
+    "due": "Oct 31",
+    "sort": "2026-10-31",
+    "next": "Reviews the app legal pages and the Rynoc teaming agreement",
+    "updated": "2026-10-13"
+   },
+   "t09": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Money",
+    "item": "Pick an accounting system and a CPA",
+    "status": "not_started",
+    "due": "Oct 31",
+    "sort": "2026-10-31",
+    "next": "Claude will check which systems connect to Claude",
+    "updated": "2026-10-13"
+   },
+   "t10": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Accounts",
+    "item": "Confirm you have a Mac with Xcode",
+    "status": "not_started",
+    "due": "Before release",
+    "sort": "2026-11-01",
+    "next": "Needed only for the final App Store upload",
+    "updated": "2026-10-13"
+   },
+   "t11": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Accounts",
+    "item": "Enroll in the Apple Developer Program ($99/yr)",
+    "status": "waiting",
+    "due": "After D-U-N-S",
+    "sort": "2026-11-05",
+    "next": "Enroll under Rynoc once the D-U-N-S number arrives",
+    "updated": "2026-10-13"
+   },
+   "t12": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Compliance",
+    "item": "Find out the rules for storing real Soldier data",
+    "status": "not_started",
+    "due": "Before a real post",
+    "sort": "2026-11-15",
+    "next": "Ask the first post or contracting office. Demo data only until then.",
+    "updated": "2026-10-13"
+   },
+   "t13": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Contracts",
+    "item": "Army AMIP CSO (REPC concept)",
+    "status": "not_started",
+    "due": "Dec 16",
+    "sort": "2026-12-16",
+    "next": "Find a tech partner and a licensed explosives safety engineer",
+    "updated": "2026-10-13"
+   },
+   "t14": {
+    "owner": "Andrew",
+    "desk": "",
+    "area": "Product",
+    "item": "Order the demo room kit (about $1,842)",
+    "status": "waiting",
+    "due": "After a CSM yes",
+    "sort": "2026-12-31",
+    "next": "Get the MultiTech letter on the gateway modem vendor (NDAA 889) first",
+    "updated": "2026-10-13"
+   },
+   "t15": {
+    "owner": "Rynoc",
+    "desk": "",
+    "area": "Company",
+    "item": "Request a D-U-N-S number",
+    "status": "not_started",
+    "due": "This week",
+    "sort": "2026-10-17",
+    "next": "Free at dnb.com, can take days",
+    "updated": "2026-10-13"
+   },
+   "t16": {
+    "owner": "Rynoc",
+    "desk": "",
+    "area": "Money",
+    "item": "Send labor hours, loaded rate and productive hours",
+    "status": "waiting",
+    "due": "Waiting since Oct 7",
+    "sort": "2026-10-08",
+    "next": "Fills the per-post pricing model",
+    "updated": "2026-10-13"
+   },
+   "t17": {
+    "owner": "Rynoc",
+    "desk": "",
+    "area": "Company",
+    "item": "Confirm general liability insurance",
+    "status": "not_started",
+    "due": "Before demo room",
+    "sort": "2026-11-30",
+    "next": "Posts usually ask for proof before a demo install",
+    "updated": "2026-10-13"
+   },
+   "t18": {
+    "owner": "Rynoc",
+    "desk": "",
+    "area": "Compliance",
+    "item": "Share current CUI, NIST 800-171 and CMMC status",
+    "status": "not_started",
+    "due": "Before award",
+    "sort": "2026-12-15",
+    "next": "DoD contracts with CUI require it",
+    "updated": "2026-10-13"
+   },
+   "t19": {
+    "owner": "Attorney",
+    "desk": "",
+    "area": "Company",
+    "item": "Review app and website legal pages",
+    "status": "waiting",
+    "due": "Before App Store",
+    "sort": "2026-11-15",
+    "next": "Waiting on Andrew to pick an attorney",
+    "updated": "2026-10-13"
+   },
+   "t20": {
+    "owner": "Claude",
+    "desk": "Contracts",
+    "area": "Contracts",
+    "item": "xTech Search 10 white paper v1",
+    "status": "at_risk",
+    "due": "Oct 19",
+    "sort": "2026-10-19",
+    "next": "Waiting on your decision above. Only a v0 draft exists.",
+    "updated": "2026-10-13"
+   },
+   "t21": {
+    "owner": "Claude",
+    "desk": "Contracts",
+    "area": "Contracts",
+    "item": "ERDC-CERL CSO proposal",
+    "status": "at_risk",
+    "due": "Oct 30",
+    "sort": "2026-10-30",
+    "next": "v0 stays the working draft. Needs Rynoc UEI and CAGE.",
+    "updated": "2026-10-13"
+   },
+   "t22": {
+    "owner": "Claude",
+    "desk": "Contracts",
+    "area": "Company",
+    "item": "Teaming agreement outline (Andrew and Rynoc)",
+    "status": "not_started",
+    "due": "Oct 24",
+    "sort": "2026-10-24",
+    "next": "Claude drafts the outline; the attorney reviews",
+    "updated": "2026-10-13"
+   },
+   "t23": {
+    "owner": "Claude",
+    "desk": "Agents",
+    "area": "Agents",
+    "item": "Conversation test 3 with the reply checker",
+    "status": "in_progress",
+    "due": "Oct 15",
+    "sort": "2026-10-15",
+    "next": "Reply checker built and passing its tests. Fresh agent and judge next.",
+    "updated": "2026-10-13"
+   },
+   "t24": {
+    "owner": "Claude",
+    "desk": "Agents",
+    "area": "Agents",
+    "item": "Update the Agentic Operating Plan with the buyer limits",
+    "status": "not_started",
+    "due": "Oct 17",
+    "sort": "2026-10-17",
+    "next": "Writes v1 of the plan doc",
+    "updated": "2026-10-13"
+   },
+   "t25": {
+    "owner": "Claude",
+    "desk": "Agents",
+    "area": "Agents",
+    "item": "Start the four background agents in shadow mode",
+    "status": "waiting",
+    "due": "After API key",
+    "sort": "2026-10-21",
+    "next": "Kit is built and tested. Needs the backend and your API key.",
+    "updated": "2026-10-13"
+   },
+   "t26": {
+    "owner": "Claude",
+    "desk": "Product",
+    "area": "Product",
+    "item": "Connect the backend and admin console",
+    "status": "waiting",
+    "due": "After Supabase",
+    "sort": "2026-10-16",
+    "next": "Ready to load as soon as the Supabase connector is on",
+    "updated": "2026-10-13"
+   },
+   "t27": {
+    "owner": "Claude",
+    "desk": "Product",
+    "area": "Product",
+    "item": "Fix Ask BRP Soldier room and Bldg 412 score mismatch",
+    "status": "not_started",
+    "due": "Oct 16",
+    "sort": "2026-10-16",
+    "next": "Two known demo bugs",
+    "updated": "2026-10-13"
+   },
+   "t28": {
+    "owner": "Claude",
+    "desk": "Product",
+    "area": "Product",
+    "item": "Capacitor iPhone app",
+    "status": "waiting",
+    "due": "After Apple account",
+    "sort": "2026-11-05",
+    "next": "Built. Needs the Apple account and a Mac to upload.",
+    "updated": "2026-10-13"
+   },
+   "t29": {
+    "owner": "Claude",
+    "desk": "Product",
+    "area": "Product",
+    "item": "Room sensor Rev 1 PCB layout",
+    "status": "not_started",
+    "due": "Later",
+    "sort": "2027-01-15",
+    "next": "Several parts out of stock until Nov 2026 to Feb 2027",
+    "updated": "2026-10-13"
+   },
+   "t30": {
+    "owner": "Claude",
+    "desk": "Back office",
+    "area": "Compliance",
+    "item": "Plan government cloud for real Army data",
+    "status": "not_started",
+    "due": "At contract",
+    "sort": "2027-02-01",
+    "next": "AWS GovCloud or Azure Government",
+    "updated": "2026-10-13"
+   },
+   "t31": {
+    "owner": "Claude",
+    "desk": "Back office",
+    "area": "Operations",
+    "item": "Daily check-in on this board",
+    "status": "in_progress",
+    "due": "Weekdays",
+    "sort": "2026-10-14",
+    "next": "Moves Claude tasks and posts only when you are needed",
+    "updated": "2026-10-13"
+   },
+   "t32": {
+    "owner": "Claude",
+    "desk": "Back office",
+    "area": "Operations",
+    "item": "Monday status",
+    "status": "in_progress",
+    "due": "Mondays",
+    "sort": "2026-10-19",
+    "next": "Updates this board and the tracker sheet",
+    "updated": "2026-10-13"
+   }
+  }
+ }
+}

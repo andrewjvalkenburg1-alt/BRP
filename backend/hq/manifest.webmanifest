@@ -1,0 +1,18 @@
+{
+ "id": "./",
+ "name": "BRP Command",
+ "short_name": "Command",
+ "description": "BRP Command: decisions, tasks, agents, purchasing, rooms, systems, documents and Ask Claude.",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "any",
+ "lang": "en-US",
+ "background_color": "#0F0F0F",
+ "theme_color": "#0F0F0F",
+ "icons": [
+  {"src": "../../icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+  {"src": "../../icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+  {"src": "../../icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+ ]
+}

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BRP Command</title>
+<meta name="description" content="BRP Command: one place to run BRP. Decisions, tasks, agents, purchasing, rooms, systems, documents and Ask Claude.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0F0F0F">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Command">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="../../splash/launch-1170x2532.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="../../splash/launch-1179x2556.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="../../splash/launch-1206x2622.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="../../splash/launch-1125x2436.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&family=Archivo:wght@400;600;700&family=Archivo+Narrow:wght@600&display=swap">
+<link rel="stylesheet" href="hq.css">
+<script>
+/* Theme before first paint: auto, or the viewer's choice. */
+try { var t = localStorage.getItem('brp-hq-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) { /* storage blocked */ }
+</script>
+</head>
+<body>
+
+<!-- ---------- sign in ---------- -->
+<div id="gate">
+  <div class="g-top"><span class="wm"><i aria-hidden="true"></i>BRP Command</span><span class="g-chip" id="g-chip">Demo mode</span></div>
+  <div class="g-wrap">
+    <section class="g-hero" aria-labelledby="g-h">
+      <div class="g-rule" aria-hidden="true"></div>
+      <h1 id="g-h">Run BRP<br>from here</h1>
+      <p>Decisions, tasks, agents, purchasing, rooms, systems and documents in one place, with Claude on call. Signed in to BRP One as the owner? You are already in.</p>
+      <p class="g-meta" style="margin-top:14px">Barracks Readiness Program · Command · Version 1</p>
+    </section>
+    <form class="g-card" id="g-form" novalidate aria-labelledby="g-title">
+      <h2 id="g-title">Sign in</h2>
+      <p class="g-mode" id="g-mode"></p>
+      <div class="g-err" id="g-err" role="alert" aria-live="assertive"></div>
+      <div class="g-field"><label for="g-email">Email</label><input class="g-in" id="g-email" type="email" autocomplete="username" spellcheck="false" autocapitalize="off" required></div>
+      <div class="g-field"><label for="g-pw">Password</label><input class="g-in" id="g-pw" type="password" autocomplete="current-password" required></div>
+      <button class="g-btn" type="submit" id="g-submit">Sign in</button>
+      <div class="g-accts" id="g-accts">
+        <p>Demo accounts. Every one uses the password <code id="g-demo-pw">BRPdemo2026!</code>. Tap one to sign in.</p>
+        <ul id="g-list"></ul>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ---------- app ---------- -->
+<div id="app" hidden>
+  <header class="top">
+    <div class="top-in">
+      <span class="wm"><i aria-hidden="true"></i>Command</span>
+      <span class="mode" id="mode-chip">Demo mode</span>
+      <div class="who">
+        <span class="u" id="who"></span>
+        <button class="ibtn" type="button" id="theme" aria-label="Theme: automatic. Change theme" title="Theme">Auto</button>
+        <button class="ibtn" type="button" id="signout">Sign out</button>
+      </div>
+    </div>
+  </header>
+  <div class="layout">
+    <aside class="side" aria-label="Sections"><nav id="side"></nav></aside>
+    <main id="main" tabindex="-1"></main>
+  </div>
+  <nav class="bnav" id="bnav" aria-label="Sections"></nav>
+  <button class="fab" type="button" id="fab" aria-haspopup="dialog" aria-controls="chat-sheet">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Claude</button>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<section class="sheet" id="more-sheet" role="dialog" aria-modal="true" aria-labelledby="more-h" hidden>
+  <div class="sheet-h"><h2 id="more-h">More</h2><button class="btn quiet" type="button" data-close>Close</button></div>
+  <div class="sheet-b"><div class="more-list" id="more-list"></div></div>
+</section>
+<section class="sheet" id="chat-sheet" role="dialog" aria-modal="true" aria-labelledby="chat-h" hidden>
+  <div class="sheet-h"><h2 id="chat-h">Claude <span class="lbl" style="display:block;margin-top:4px">BRP Command thread</span></h2><button class="btn quiet" type="button" data-close>Close</button></div>
+  <div class="sheet-b" id="chat-dock"></div>
+</section>
+
+<!-- The one chat panel. It moves between the Ask Claude page and the drawer. -->
+<template id="chat-tpl">
+  <div class="chat" id="chat">
+    <p class="banner" id="chat-mode" hidden></p>
+    <p class="lbl" id="chat-title">Claude (BRP Command thread)</p>
+    <div class="chat-log" id="chat-log" aria-live="polite" aria-label="Conversation with Claude, BRP Command thread"></div>
+    <form class="composer" id="chat-form" novalidate>
+      <label class="sr" for="chat-in">Message to Claude</label>
+      <textarea class="in" id="chat-in" rows="2" placeholder="Message Claude about tasks, decisions, rooms, orders, agents or new work"></textarea>
+      <p class="err" id="chat-err" role="alert"></p>
+      <div class="row">
+        <button class="btn pri" type="submit" id="chat-send">Send to Claude</button>
+        <button class="btn" type="button" id="chat-quick">Quick answer</button>
+      </div>
+      <p class="small muted">Send to Claude goes to the BRP Command thread, which can do bigger work like code and documents. The reply appears here. Quick answer is a short reply from the records, right away.</p>
+    </form>
+  </div>
+</template>
+
+<dialog id="dlg" aria-labelledby="dlg-h"><form method="dialog" id="dlg-form"></form></dialog>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="../client/brp-config.js"></script>
+<script src="../client/brp-backend.js"></script>
+<script src="../client/agent-samples.js"></script>
+<script src="hq-seed.js"></script>
+<script src="hq.js"></script>
+</body>
+</html>

@@ -145,6 +145,12 @@ textarea.in{resize:vertical;font-size:16px}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--kt);padding:12px 16px;font-size:14px;max-width:calc(100vw - 32px);z-index:50;border-left:4px solid var(--sig)}
 .foot{max-width:1440px;margin:0 auto;padding:0 24px 32px;font-size:13px;color:var(--ink2)}
 @media (max-width:900px){.split{grid-template-columns:1fr}}
+/* embedded in BRP HQ: no console header, banner or footer; HQ shows those */
+.embed .top-in,.embed .banner,.embed .foot{display:none}
+.embed .top{position:static}
+.embed main{padding-top:16px}
+.embed #gate{min-height:0;padding:24px 16px}
+.embed .g-hero{display:none}
 @media (max-width:600px){
   .top-in{padding:10px 16px;gap:10px}
   .top .who{margin-left:0;width:100%;justify-content:space-between}
@@ -204,6 +210,7 @@ textarea.in{resize:vertical;font-size:16px}
 <script src="brp-config.js"></script>
 <script src="brp-backend.js"></script>
 <script src="demo-data.js"></script>
+<script src="agent-samples.js"></script>
 <script>
 (function () {
 'use strict';
@@ -231,45 +238,8 @@ function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; cle
    Operations agents. SAMPLE DATA for local demo mode: these proposals were written for the demo; no agent has run.
    The real rows come from public.agent_proposals (migration 20261014000100_brp_agents.sql).
    ===================================================================== */
-var AGENT_LABEL = { buyer_dispatch: 'Buyer and Dispatch', sensor_watch: 'Sensor Watch', inspection_scheduler: 'Inspection Scheduler', room_readiness: 'Room Readiness Planner', soldier_liaison: 'Soldier Liaison' };
-var FLAG_LABEL = { over_per_order_limit: 'Over $500 per order', over_weekly_cap: 'Over the weekly cap', over_site_lead_authority: 'Over $2,500: program manager', total_mismatch: 'Total does not match lines' };
-var SAMPLE_PROPOSALS = [
-  { id: 'AP-S0001', sample: true, agent: 'buyer_dispatch', inst: 'STW', kind: 'purchase_order', status: 'proposed', created_at: '2026-10-07T12:10:00.000Z', mode_at_proposal: 'shadow',
-    payload: { vendor_id: 'V1', lines: [{ sku: 'CAP-355', qty: 6, unit_cost: 14.6 }], shipping: 0, total: 87.6, approval_level: 'auto' },
-    rationale: 'SAMPLE DATA. CAB-STW holds 0 of CAP-355 against a reorder point of 3 (reorder quantity 6). Part record lists V1 at $14.60. My calculation: 6 x $14.60 = $87.60. Inside $500 per order and the weekly cap.',
-    cited_ids: ['CAB-STW', 'CAP-355', 'V1'], flags: [], approver_required: null },
-  { id: 'AP-S0002', sample: true, agent: 'buyer_dispatch', inst: 'STW', kind: 'purchase_order', status: 'proposed', created_at: '2026-10-07T12:11:00.000Z', mode_at_proposal: 'shadow',
-    payload: { vendor_id: 'V1', lines: [{ sku: 'PTAC-12K', qty: 2, unit_cost: 1180 }], shipping: 0, total: 2360, approval_level: 'site_lead' },
-    rationale: 'SAMPLE DATA. CAB-STW holds 0 of PTAC-12K (reorder point 1, reorder quantity 2). My calculation: 2 x $1,180.00 = $2,360.00. Over the $500 per-order limit, so the Fort Stewart site lead must approve through an approval task. One order, not split.',
-    cited_ids: ['CAB-STW', 'PTAC-12K', 'V1'], flags: ['over_per_order_limit'], approver_required: 'site_lead' },
-  { id: 'AP-S0003', sample: true, agent: 'buyer_dispatch', inst: 'STW', kind: 'backorder_decision', status: 'proposed', created_at: '2026-10-07T12:12:00.000Z', mode_at_proposal: 'shadow',
-    payload: { po_id: 'BRP-STW-27-0433', recommendation: 'wait', facts: 'PO is backordered with V3. No work order is waiting on it.' },
-    rationale: 'SAMPLE DATA. BRP-STW-27-0433 ($532.00, V3) is backordered and is a replenishment order with no work order attached. Recommend the site lead decide to wait. UNVERIFIED: the vendor\'s new ship date is not in the BRP records.',
-    cited_ids: ['BRP-STW-27-0433', 'V3'], flags: [], approver_required: null },
-  { id: 'AP-S0004', sample: true, agent: 'sensor_watch', inst: 'STW', kind: 'sensor_work_order', status: 'proposed', created_at: '2026-10-07T12:15:00.000Z', mode_at_proposal: 'shadow',
-    payload: { room_id: 'STW-412-1C', priority: 'Urgent', condition: 'Humidity above 60%', evidence: [{ room_id: 'STW-412-1C', field: 'sensor_rh', value: 61.8, read_at: '2026-10-07T11:55:00Z' }, { room_id: 'STW-412-1C', field: 'sensor_wall_rh', value: 79, read_at: '2026-10-07T11:55:00Z' }] },
-    rationale: 'SAMPLE DATA. STW-412-1C reads 61.8% RH with wall RH 79% at 11:55. Above the 30 to 60% standard. UNVERIFIED: how long it has been above 60%; the backend holds the latest reading only, so the 72-hour mold rule cannot be checked. Priority provisional; the barracks manager confirms at inspection.',
-    cited_ids: ['STW-412-1C'], flags: [], approver_required: null },
-  { id: 'AP-S0005', sample: true, agent: 'sensor_watch', inst: 'STW', kind: 'sensor_maintenance', status: 'approved', created_at: '2026-10-07T12:16:00.000Z', mode_at_proposal: 'shadow',
-    payload: { room_id: 'STW-412-1H', fault: 'low_battery' },
-    rationale: 'SAMPLE DATA. The STW-412-1H sensor reports low_battery. Its readings should be treated as unknown until a sensor technician replaces the battery.',
-    cited_ids: ['STW-412-1H'], flags: [], approver_required: null, decided_by_email: 'admin@brp.demo', decided_at: '2026-10-07T13:02:00.000Z', decision_note: 'Agree. Battery swap on the next round.' },
-  { id: 'AP-S0006', sample: true, agent: 'inspection_scheduler', inst: 'STW', kind: 'inspection_booking', status: 'rejected', created_at: '2026-10-07T12:20:00.000Z', mode_at_proposal: 'shadow',
-    payload: { type: 'vacant_walk', building_id: 'STW-118', room_ids: ['STW-118-1F'], manager_name: 'D. Hargrove', start: '2026-10-08T13:00:00-04:00', end: '2026-10-08T13:10:00-04:00' },
-    rationale: 'SAMPLE DATA. STW-118-1F is vacant and offline. A monthly vacant-room walk is due. UNVERIFIED: D. Hargrove\'s calendar and duty hours are not in the BRP records.',
-    cited_ids: ['STW-118-1F', 'STW-118'], flags: [], approver_required: null, decided_by_email: 'admin@brp.demo', decided_at: '2026-10-07T13:05:00.000Z', decision_note: 'Room is offline for mold remediation. Walk it after remediation, not now.' },
-  { id: 'AP-S0007', sample: true, agent: 'room_readiness', inst: 'STW', kind: 'readiness_plan', status: 'proposed', created_at: '2026-10-07T12:30:00.000Z', mode_at_proposal: 'shadow',
-    payload: { horizon_start: '2026-10-08', horizon_end: '2026-10-21', ready_now: ['STW-412-1B', 'STW-412-1E', 'STW-412-1G'], fill_next: [{ rank: 1, room_id: 'STW-412-1B', ready_now: true }, { rank: 2, room_id: 'STW-412-1E', ready_now: true }, { rank: 3, room_id: 'STW-412-1G', ready_now: true }], rooms_returned: [], not_planned: [{ room_id: 'STW-305-1A', reason: 'Status action with no work order hour estimate in the records' }] },
-    rationale: 'SAMPLE DATA. STW-412-1B, 1E and 1G are vacant, status ok, with sensor readings inside range at 11:55 and no open work order found. STW-305-1A is not planned: no hour estimate exists. The housing office assigns rooms; this is a recommendation.',
-    cited_ids: ['STW-412-1B', 'STW-412-1E', 'STW-412-1G', 'STW-305-1A'], flags: [], approver_required: null }
-];
-var SAMPLE_AGENT_SETTINGS = [
-  { agent: 'buyer_dispatch', inst: '*', mode: 'shadow', note: 'Readiness L2 (bench run-002). Shadow: proposes only.' },
-  { agent: 'sensor_watch', inst: '*', mode: 'shadow', note: 'Readiness L2 (bench run-003). Shadow: proposes only.' },
-  { agent: 'inspection_scheduler', inst: '*', mode: 'shadow', note: 'Readiness L2 (bench run-003). Shadow: proposes only.' },
-  { agent: 'room_readiness', inst: '*', mode: 'shadow', note: 'Readiness L2 (bench run-003). Shadow: proposes only.' },
-  { agent: 'soldier_liaison', inst: '*', mode: 'off', note: 'Not ready. Soldier-facing chat stays off until it passes its benches.' }
-];
+var AS_ = window.BRP_AGENT_SAMPLES;
+var AGENT_LABEL = AS_.labels, FLAG_LABEL = AS_.flags, SAMPLE_PROPOSALS = AS_.proposals, SAMPLE_AGENT_SETTINGS = AS_.settings;
 
 /* =====================================================================
    Data layer. LOCAL: browser-only copy of the seed (demo-data.js). REMOTE: BRPBackend + Supabase RLS.
@@ -289,6 +259,7 @@ function localApi() {
   function agentSamples(d) {
     if (!d.agent_proposals) d.agent_proposals = clone(SAMPLE_PROPOSALS);
     if (!d.agent_settings) d.agent_settings = clone(SAMPLE_AGENT_SETTINGS);
+    (AS_.hq_profiles || []).forEach(function (p) { if (!d.profiles.some(function (x) { return x.email === p.email; })) d.profiles.push(clone(p)); });
   }
   function nowIso() { return new Date().toISOString(); }
   function audit(action, table, rowId, oldRow, newRow) {
@@ -442,7 +413,7 @@ function remoteApi() {
    Sign in gate
    ===================================================================== */
 var ME = null;
-var ACCTS = [['admin@brp.demo', 'Admin'], ['soldier@brp.demo', 'Soldier'], ['tech@brp.demo', 'Technician'], ['manager@brp.demo', 'Barracks manager'], ['sitelead@brp.demo', 'Site lead'],
+var ACCTS = [['admin@brp.demo', 'Admin'], ['owner@brp.demo', 'HQ owner (admin)'], ['soldier@brp.demo', 'Soldier'], ['tech@brp.demo', 'Technician'], ['manager@brp.demo', 'Barracks manager'], ['sitelead@brp.demo', 'Site lead'],
   ['pm@brp.demo', 'Program manager'], ['buyer@brp.demo', 'Buyer'], ['cor@brp.demo', 'Government COR'], ['commander@brp.demo', 'Garrison commander']];
 $('g-mode').innerHTML = LOCAL
   ? '<b>Local demo mode.</b> No server is configured, so this console runs on sample data kept in this browser. Changes stay on this device.'
@@ -477,7 +448,12 @@ $('g-form').addEventListener('submit', function (e) {
 var TABS = [['overview', 'Overview'], ['agents', 'Agent proposals'], ['users', 'Users and roles'], ['sites', 'Sites'], ['rooms', 'Rooms'], ['wo', 'Work orders'], ['parts', 'Parts and catalog'],
   ['stock', 'Stock'], ['po', 'Purchase orders'], ['plist', 'Purchase list'], ['csat', 'Satisfaction'], ['alerts', 'Alerts'], ['outbox', 'Email outbox'], ['audit', 'Audit log']];
 var cur = 'overview', CACHE = {}, VIEW = {}, INSTS = [];
-try { var saved = localStorage.getItem('brp-admin-tab'); if (saved && TABS.some(function (t) { return t[0] === saved; })) cur = saved; } catch (e) { /* ok */ }
+/* Embed mode for BRP HQ (backend/hq/): admin.html?embed=1&tabs=po,plist,stock shows only those tabs, without the console
+   header, and does not remember the tab. Sign-in is shared with HQ (same browser session), and the Admin rule still applies. */
+var EMBED = /[?&]embed=1(&|$)/.test(location.search);
+var EMBED_TABS = ((location.search.match(/[?&]tabs=([a-z,]+)/) || [])[1] || '').split(',').filter(function (t) { return TABS.some(function (x) { return x[0] === t; }); });
+if (EMBED) { document.documentElement.classList.add('embed'); if (EMBED_TABS.length) { TABS = EMBED_TABS.map(function (k) { return TABS.filter(function (t) { return t[0] === k; })[0]; }); cur = TABS[0][0]; } }
+try { var saved = EMBED ? null : localStorage.getItem('brp-admin-tab'); if (saved && TABS.some(function (t) { return t[0] === saved; })) cur = saved; } catch (e) { /* ok */ }
 
 function openApp() {
   $('gate').hidden = true; $('app').hidden = false;
@@ -494,7 +470,7 @@ function openApp() {
 $('tabs').addEventListener('click', function (e) {
   var b = e.target.closest('button[data-tab]'); if (!b) return;
   cur = b.getAttribute('data-tab');
-  try { localStorage.setItem('brp-admin-tab', cur); } catch (x) { /* ok */ }
+  if (!EMBED) { try { localStorage.setItem('brp-admin-tab', cur); } catch (x) { /* ok */ } }
   Array.prototype.forEach.call($('tabs').children, function (x) { x.setAttribute('aria-selected', x === b); });
   render(); $('main').focus({ preventScroll: true });
 });
