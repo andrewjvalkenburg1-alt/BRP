@@ -1,0 +1,14 @@
+{
+  "appId": "com.dravek.hq",
+  "appName": "Dravek HQ",
+  "webDir": "www",
+  "backgroundColor": "#0F0F0F",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#0F0F0F",
+    "preferredContentMode": "mobile"
+  },
+  "plugins": {
+    "StatusBar": { "overlaysWebView": true, "style": "DARK", "backgroundColor": "#0F0F0F" }
+  }
+}

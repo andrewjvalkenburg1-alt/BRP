@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dravek HQ</title>
+<script src="capacitor.js"></script>
+<style>
+  :root {
+    --ink: #141414; --ink-2: #4A4740; --bone: #E4DFD5; --bone-2: #D8D2C5;
+    --signal: #FF5A1F; --line: rgba(228,223,213,.14); --muted: rgba(228,223,213,.62);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { background: var(--ink); color: var(--bone); min-height: 100%; }
+  body {
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    padding: calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 24px);
+    -webkit-user-select: none; user-select: none;
+  }
+  .eyebrow { font: 600 11px/1 ui-monospace, "SF Mono", monospace; letter-spacing: .16em; text-transform: uppercase; color: var(--signal); }
+  h1 { font: 800 34px/1.05 -apple-system, "SF Pro Display", system-ui, sans-serif; letter-spacing: -.02em; margin: 10px 0 4px; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .group { margin-top: 28px; }
+  .group h2 { font: 600 11px/1 ui-monospace, "SF Mono", monospace; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .tile {
+    display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+    background: rgba(228,223,213,.05); border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px; margin-bottom: 10px; color: inherit; font: inherit; cursor: pointer;
+  }
+  .tile:active { background: rgba(255,90,31,.12); border-color: var(--signal); }
+  .mark { flex: 0 0 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+    background: var(--bone); color: var(--ink); font: 800 15px/1 ui-monospace, "SF Mono", monospace; }
+  .tile .t { font-weight: 650; }
+  .tile .d { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .tile .go { margin-left: auto; color: var(--signal); font-size: 20px; }
+  .del { margin-left: auto; background: none; border: 0; color: var(--muted); font-size: 13px; padding: 8px; }
+  form { display: grid; gap: 8px; margin-top: 8px; }
+  input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: rgba(228,223,213,.06); color: var(--bone); font: inherit; -webkit-user-select: text; user-select: text; }
+  .btn { padding: 12px 14px; border-radius: 10px; border: 0; background: var(--signal); color: var(--ink); font-family: inherit; font-size: 15px; font-weight: 700; }
+  .lock { position: fixed; inset: 0; background: var(--ink); display: grid; place-items: center; text-align: center; padding: 24px; z-index: 5; }
+  .lock[hidden] { display: none; }
+  .lock .btn { margin-top: 20px; min-width: 200px; }
+  .note { color: var(--muted); font-size: 12px; margin-top: 28px; }
+</style>
+</head>
+<body>
+  <div class="lock" id="lock">
+    <div>
+      <div class="eyebrow">Dravek</div>
+      <h1>HQ</h1>
+      <p class="sub">Owner portals. Locked.</p>
+      <button class="btn" id="unlock">Unlock with Face ID</button>
+    </div>
+  </div>
+
+  <div class="eyebrow">Dravek</div>
+  <h1>HQ</h1>
+  <p class="sub">Every owner portal, one place.</p>
+
+  <div class="group">
+    <h2>Barracks Readiness (BRP)</h2>
+    <div id="brp"></div>
+  </div>
+  <div class="group">
+    <h2>Contract Hunt</h2>
+    <div id="hunt"></div>
+  </div>
+  <div class="group">
+    <h2>My portals</h2>
+    <div id="mine"></div>
+    <form id="add">
+      <input id="addName" placeholder="Name" autocomplete="off" required>
+      <input id="addUrl" type="url" placeholder="https:// link" autocomplete="off" required>
+      <button class="btn" type="submit">Add portal</button>
+    </form>
+  </div>
+
+  <p class="note">Portals open in a secure Safari viewer inside this app. Sign in to claude.ai and Google once there and it stays signed in. The app stores nothing but your portal list.</p>
+
+<script>
+(function () {
+  'use strict';
+  var BUILT_IN = {
+    brp: [
+      { mark: 'CMD', t: 'BRP owner portal', d: 'Command: HQ tables and the Claude thread', url: 'https://andrewjvalkenburg1-alt.github.io/BRP/backend/hq/' },
+      { mark: 'CC', t: 'BRP Command Center', d: 'Tasks, decisions, agents', url: 'https://claude.ai/artifact/7VoPSKffp9m9y1AFsKcMhH' },
+      { mark: 'ONE', t: 'BRP One', d: 'The field app, as Soldiers see it', url: 'https://andrewjvalkenburg1-alt.github.io/BRP/' },
+      { mark: 'TRK', t: 'Master Tracker', d: 'All open items, owners and dates', url: 'https://docs.google.com/spreadsheets/d/1hjhT3lQyH_i8qZcFGVv9hlBqX2YC-gaKrtQpjQEeb7w/edit' }
+    ],
+    hunt: [
+      { mark: 'GCS', t: 'Contracts Command Center', d: 'GovCon Scout: opportunities and bids', url: 'https://claude.ai/artifact/VoQB9wN7pMWj2wpao6ySEB' }
+    ]
+  };
+  var KEY = 'dravek.hq.mine';
+  var C = window.Capacitor;
+  var native = !!(C && C.isNativePlatform && C.isNativePlatform());
+  function plugin(name) {
+    if (!native) return null;
+    try { return C.registerPlugin(name); } catch (e) { return null; }
+  }
+  var Browser = plugin('Browser');
+  var Bio = plugin('BiometricAuthNative');
+  var StatusBar = plugin('StatusBar');
+  if (StatusBar) StatusBar.setStyle({ style: 'DARK' }).catch(function () {});
+
+  function open(url) {
+    if (Browser) return Browser.open({ url: url, presentationStyle: 'fullscreen', toolbarColor: '#141414' }).catch(function () { location.href = url; });
+    window.open(url, '_blank', 'noopener');
+  }
+
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+  function save(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
+
+  function tile(p, onDelete) {
+    var b = document.createElement('div');
+    b.className = 'tile'; b.setAttribute('role', 'button'); b.tabIndex = 0;
+    var m = document.createElement('span'); m.className = 'mark'; m.textContent = p.mark || (p.t || '?').slice(0, 2).toUpperCase();
+    var txt = document.createElement('span');
+    var t = document.createElement('div'); t.className = 't'; t.textContent = p.t;
+    var d = document.createElement('div'); d.className = 'd'; d.textContent = p.d || p.url.replace(/^https?:\/\//, '').split('/')[0];
+    txt.appendChild(t); txt.appendChild(d);
+    b.appendChild(m); b.appendChild(txt);
+    if (onDelete) {
+      var x = document.createElement('button'); x.className = 'del'; x.type = 'button'; x.textContent = 'Remove';
+      x.addEventListener('click', function (e) { e.stopPropagation(); onDelete(); });
+      b.appendChild(x);
+    } else {
+      var g = document.createElement('span'); g.className = 'go'; g.textContent = '↗'; b.appendChild(g);
+    }
+    b.addEventListener('click', function () { open(p.url); });
+    return b;
+  }
+
+  function render() {
+    ['brp', 'hunt'].forEach(function (k) {
+      var el = document.getElementById(k); el.textContent = '';
+      BUILT_IN[k].forEach(function (p) { el.appendChild(tile(p)); });
+    });
+    var mine = load(), el = document.getElementById('mine'); el.textContent = '';
+    mine.forEach(function (p, i) {
+      el.appendChild(tile(p, function () { var l = load(); l.splice(i, 1); save(l); render(); }));
+    });
+  }
+
+  document.getElementById('add').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = document.getElementById('addName').value.trim();
+    var url = document.getElementById('addUrl').value.trim();
+    if (!/^https:\/\//i.test(url)) { alert('Use an https:// link.'); return; }
+    var l = load(); l.push({ t: name, url: url }); save(l);
+    e.target.reset(); render();
+  });
+
+  /* Face ID lock: on launch and whenever the app comes back to the foreground. */
+  var lock = document.getElementById('lock');
+  function unlock() {
+    if (!Bio) { lock.hidden = true; return; }
+    var fn = Bio.internalAuthenticate || Bio.authenticate;
+    fn.call(Bio, { reason: 'Unlock your owner portals', cancelTitle: 'Cancel', allowDeviceCredential: true })
+      .then(function () { lock.hidden = true; })
+      .catch(function () { lock.hidden = false; });
+  }
+  document.getElementById('unlock').addEventListener('click', unlock);
+  if (native && Bio) {
+    lock.hidden = false; unlock();
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') lock.hidden = false;
+    });
+  } else {
+    lock.hidden = true;
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

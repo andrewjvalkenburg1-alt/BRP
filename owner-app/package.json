@@ -1,0 +1,21 @@
+{
+  "name": "dravek-hq",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dravek HQ: Andrew's personal iPhone app holding his owner portals (BRP, Contract Hunt). Personal use through TestFlight only.",
+  "scripts": {
+    "sync": "cap sync",
+    "patch-ios": "python3 scripts/patch-ios.py"
+  },
+  "dependencies": {
+    "@aparajita/capacitor-biometric-auth": "^10.0.0",
+    "@capacitor/browser": "^8.0.0",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
+    "@capacitor/status-bar": "^8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3"
+  },
+  "engines": { "node": ">=22" }
+}

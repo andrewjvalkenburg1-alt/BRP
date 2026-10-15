@@ -1,15 +1,15 @@
 # BRP One on the App Store: steps for Andrew
 
-Updated Oct 15, 2026. Bundle ID is now **com.barracksreadiness.brpone**, to match the planned domain and Andrew's own LLC (BRP belongs to his LLC, not Rynoc). Andrew has an Apple Developer account.
+Updated Oct 15, 2026. Bundle ID is now **com.dravek.brpone**, because BRP One belongs to the Dravek and Rynoc joint venture and is published under Dravek, Andrew's company. Andrew has an Apple Developer account.
 
 ## Fastest path: build in the cloud, no Mac needed
 
 `.github/workflows/ios-testflight.yml` builds, signs and uploads the app to TestFlight on a GitHub macOS runner.
 
 1. In App Store Connect: **Users and Access > Integrations > App Store Connect API**, create a key with the **Admin** role (needed so the build can create the signing certificate). Download the .p8 file once and note the Key ID and Issuer ID.
-2. In App Store Connect: **Apps > + > New App**, iOS, name `BRP One`, bundle ID `com.barracksreadiness.brpone` (register it first under Certificates, Identifiers & Profiles > Identifiers if it is not offered), SKU `BRPONE-IOS-001`.
+2. In App Store Connect: **Apps > + > New App**, iOS, name `BRP One`, bundle ID `com.dravek.brpone` (register it first under Certificates, Identifiers & Profiles > Identifiers if it is not offered), SKU `BRPONE-IOS-001`.
 3. In GitHub, repo **Settings > Secrets and variables > Actions**, add `APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_P8` (the .p8 file's full text). Never paste these anywhere else.
-4. **Actions > iOS TestFlight > Run workflow.** The build appears under TestFlight after Apple processes it. Add yourself as an internal tester and install with the TestFlight app.
+4. **Actions > iOS TestFlight > Run workflow**, pick `native` (BRP One) or `owner-app` (Dravek HQ, your personal owner app, bundle ID `com.dravek.hq`, created the same way as step 2 with SKU `DRAVEKHQ-IOS-001`; it stays on TestFlight for your own use). The build appears under TestFlight after Apple processes it. Add yourself as an internal tester and install with the TestFlight app.
 
 The Mac steps below still work if you ever want to run the app from Xcode.
 
@@ -50,7 +50,7 @@ If the D-U-N-S number will take long, you can start TestFlight testing sooner wi
 
 1. In the left sidebar, click **App** (the blue project icon), then the **App** target, then **Signing & Capabilities**.
 2. Check **Automatically manage signing**. Set **Team** to **Rynoc Solutions**.
-3. Confirm **Bundle Identifier** is `com.barracksreadiness.brpone`. Xcode registers it in your developer account.
+3. Confirm **Bundle Identifier** is `com.dravek.brpone`. Xcode registers it in your developer account.
 4. Confirm two capabilities are listed: **Push Notifications** and **Background Modes** with **Remote notifications** checked. They come from `App/App.entitlements` and `Info.plist`. If either is missing, click **+ Capability** and add it.
 5. Under **General**, set **Version** (1.0) and **Build** (1). Raise the build number for every upload.
 
@@ -71,7 +71,7 @@ You first need the app record (step 6, item 1) so the upload has somewhere to go
 
 ## 6. App Store Connect listing (you, copy and paste)
 
-1. **Apps, +, New App**: Platform iOS. Name `BRP One`. Primary language English (U.S.). Bundle ID `com.barracksreadiness.brpone`. SKU `BRPONE-IOS-001`. User access Full Access.
+1. **Apps, +, New App**: Platform iOS. Name `BRP One`. Primary language English (U.S.). Bundle ID `com.dravek.brpone`. SKU `BRPONE-IOS-001`. User access Full Access.
    If the name is taken, use `BRP One: Barracks Readiness`.
 
 | Field | Text |
