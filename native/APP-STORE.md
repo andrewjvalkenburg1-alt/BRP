@@ -1,16 +1,17 @@
 # BRP One on the App Store: steps for Andrew
 
-Status Oct 13, 2026. App name **BRP One**, bundle ID **com.rynocsolutions.brpone**, seller **Rynoc Solutions**. The app is a demo of the Barracks Readiness Program that runs on sample data. Every step below that says "you" needs your Apple account or a Mac; everything else is already done in `native/`.
+Updated Oct 15, 2026. Bundle ID is now **com.barracksreadiness.brpone**, to match the planned domain and Andrew's own LLC (BRP belongs to his LLC, not Rynoc). Andrew has an Apple Developer account.
 
-## What is already done
+## Fastest path: build in the cloud, no Mac needed
 
-- Capacitor 8.5.3 project in `native/` with an iOS project (`native/ios/App`) that uses Swift Package Manager. No CocoaPods is needed on the Mac.
-- An Android project (`native/android`). A debug build was compiled on Linux to check it.
-- Plain-words permission text for the camera (room QR codes) and Face ID (quick sign-in), the push notification entitlement, Background Modes "remote notification", a privacy manifest (no tracking, no data collected), and the export compliance flag (standard HTTPS only).
-- App icon and launch screen in the brand (ink, bone, Signal Orange).
-- Native features through `native/www-bridge/brp-native.js`: QR scanning, Face ID quick sign-in, push and local notifications with tap-to-open, haptics, share sheet, status bar and safe areas, and the rating prompt. The hooks the shell needs are in `native/INTEGRATE.md`.
-- The app build carries its own fonts and animation library, so it works offline and makes no requests to Google Fonts or cdnjs.
-- Store screenshots at the required sizes in `native/store/screenshots/`.
+`.github/workflows/ios-testflight.yml` builds, signs and uploads the app to TestFlight on a GitHub macOS runner.
+
+1. In App Store Connect: **Users and Access > Integrations > App Store Connect API**, create a key with the **Admin** role (needed so the build can create the signing certificate). Download the .p8 file once and note the Key ID and Issuer ID.
+2. In App Store Connect: **Apps > + > New App**, iOS, name `BRP One`, bundle ID `com.barracksreadiness.brpone` (register it first under Certificates, Identifiers & Profiles > Identifiers if it is not offered), SKU `BRPONE-IOS-001`.
+3. In GitHub, repo **Settings > Secrets and variables > Actions**, add `APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_P8` (the .p8 file's full text). Never paste these anywhere else.
+4. **Actions > iOS TestFlight > Run workflow.** The build appears under TestFlight after Apple processes it. Add yourself as an internal tester and install with the TestFlight app.
+
+The Mac steps below still work if you ever want to run the app from Xcode.
 
 ## 1. Apple Developer account (you)
 
@@ -49,7 +50,7 @@ If the D-U-N-S number will take long, you can start TestFlight testing sooner wi
 
 1. In the left sidebar, click **App** (the blue project icon), then the **App** target, then **Signing & Capabilities**.
 2. Check **Automatically manage signing**. Set **Team** to **Rynoc Solutions**.
-3. Confirm **Bundle Identifier** is `com.rynocsolutions.brpone`. Xcode registers it in your developer account.
+3. Confirm **Bundle Identifier** is `com.barracksreadiness.brpone`. Xcode registers it in your developer account.
 4. Confirm two capabilities are listed: **Push Notifications** and **Background Modes** with **Remote notifications** checked. They come from `App/App.entitlements` and `Info.plist`. If either is missing, click **+ Capability** and add it.
 5. Under **General**, set **Version** (1.0) and **Build** (1). Raise the build number for every upload.
 
@@ -70,7 +71,7 @@ You first need the app record (step 6, item 1) so the upload has somewhere to go
 
 ## 6. App Store Connect listing (you, copy and paste)
 
-1. **Apps, +, New App**: Platform iOS. Name `BRP One`. Primary language English (U.S.). Bundle ID `com.rynocsolutions.brpone`. SKU `BRPONE-IOS-001`. User access Full Access.
+1. **Apps, +, New App**: Platform iOS. Name `BRP One`. Primary language English (U.S.). Bundle ID `com.barracksreadiness.brpone`. SKU `BRPONE-IOS-001`. User access Full Access.
    If the name is taken, use `BRP One: Barracks Readiness`.
 
 | Field | Text |
