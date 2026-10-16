@@ -1,6 +1,8 @@
 {
   "about": "Config for reply-checker.mjs. Applies to every BRP agent that talks to people (today: soldier_liaison, disabled). Patterns are JavaScript regular expressions, matched case-insensitively against one sentence at a time.",
-  "applies_to": ["soldier_liaison"],
+  "applies_to": [
+    "soldier_liaison"
+  ],
   "model": "claude-sonnet-5-5",
   "model_reason": "A cheaper model than the agent's own is fine for a second read, but this check guards safety and honesty lines, so it uses Sonnet 5.5 rather than Haiku. The rules below run first and win over the model when they disagree.",
   "max_tokens": 2000,
@@ -14,13 +16,18 @@
         "\\b(they|he|she)\\s+(are|is|'re|'s)\\s+there\\b",
         "\\b(any ?time|24/7|24 hours a day|around the clock|right away for you)\\b",
         "\\byou can (ask|call|contact|reach|email|text|message|talk to|go to|check with)\\b",
-        "\\b(crisis line|hotline|admin console|console|housing office|legal assistance|claims office|chain of command|staff duty|cq|vendor|site lead|program manager|barracks manager|technician|tech)\\b[^.]*\\b(can (help|see|show|fix|advise|tell|answer|change|approve)|will (help|call|fix|come|see|show)|is able to|are able to|handles|lets you|shows)\\b"
+        "\\b(crisis line|hotline|admin console|console|housing office|legal assistance|claims office|chain of command|staff duty|cq|vendor|site lead|program manager|barracks manager|technician|tech)\\b[^.]*\\b(can (help|see|show|fix|advise|tell|answer|change|approve)|will (help|call|fix|come|see|show)|is able to|are able to|handles|lets you|shows)\\b",
+        "\\b(it|that|this|they) (can|could|will) be (reported|calculated|computed|shown|tracked|measured|pulled|produced)\\b",
+        "\\b(would|will|has to|have to|must|should|could|can only) (have to )?come from (the )?[\\w' ]{0,25}\\b(offices?|army|unit|installation|post|garrison|dpw|government|command)\\b",
+        "\\b(site lead|program manager|barracks manager|andrew|technician|vendor|buyer|chain of command|unit|housing office)\\b to (arrange|grant|give you|provide|share|set up|open up)\\b",
+        "\\b(unit|directory|office|front desk|cq|staff duty|command|website)\\b[^.]{0,30}\\b(will|would|should) (have|know|list|keep|hold) (them|it|that|those|the (numbers?|contacts?|hours|details))\\b"
       ]
     },
     "authority": {
       "label": "States who decides or approves something",
       "patterns": [
         "\\b[\\w.]+(\\s[\\w.]+)?'s call\\b",
+        "\\b(judg(e)?ment|decision|call) (is )?(for|with|belongs to) (the |him|her|them)",
         "\\b(decides?|deciding|the decision is (his|hers|theirs|the [a-z ]+'s)|up to (the|him|her|them))\\b",
         "\\b(has|have) (the )?final say\\b",
         "\\b(can|may) (verify|sign off|approve)\\b"
@@ -32,8 +39,38 @@
         "\\b(unit|housing office)\\b[^.]*\\bdecide",
         "\\bbarracks manager and (the )?technician decide what (gets|is) done\\b",
         "\\bbarracks manager confirms the priority\\b",
-        "\\b(I|agents?) (do not|don't|never|cannot|can't) approve\\b"
-      ]
+        "\\b(I|agents?) (do not|don't|never|cannot|can't) approve\\b",
+        "^(a|an) [\\w -]*\\bwho (can|may) (verify|approve|sign off)\\b"
+      ],
+      "backed_about": "A sentence that matches an authority pattern also passes when the role named next to the decide/approve/verify word (or, for he/she, the role named in the last few sentences of the draft) is one the pack names as a decider, and the sentence is not about a topic the pack says that role does not decide. Any other decider (responders, the technician alone, a named staff member, the vendor) is still cut.",
+      "backed": [
+        {
+          "who": "\\bsite lead\\b",
+          "not": "\\b(verif|stand in|cover for|housing|room move|where [^.]* (lives?|sleeps?|stays?)|assign|blame|fault|judg)"
+        },
+        {
+          "who": "\\bprogram manager\\b",
+          "only": "\\b(approv|over \\$|above|limit|\\$2,500|brief|review|confirm)"
+        },
+        {
+          "who": "\\bandrew\\b",
+          "not": "\\b(verif|housing|room move|where [^.]* (lives?|sleeps?|stays?)|blame|fault)"
+        },
+        {
+          "who": "\\bbarracks manager\\b",
+          "only": "\\b(verif|inspect|room status|records)",
+          "not": "\\b(where [^.]* (lives?|sleeps?|stays?)|housing|room move)"
+        },
+        {
+          "who": "\\b(the unit|your unit|housing office)\\b",
+          "only": "\\b(room|housing|move|assign|live|stay)"
+        },
+        {
+          "who": "\\bcontracting officer\\b",
+          "only": "\\b(commit|government|contract)"
+        }
+      ],
+      "pronoun": "^(he|she)\\b|\\b(and|so|then|,) (he|she)\\b|\\b(he|she)('s| is| will|'ll| can| decides?)\\b"
     },
     "safety": {
       "label": "Safety advice beyond the pack's script",
@@ -55,9 +92,22 @@
         "Call 911 now."
       ],
       "restore": [
-        { "when": "\\b(co|carbon monoxide|smoke|fire|gas|spark|sparking|alarm)\\b", "line": "Get out of the room to fresh air now and call 911. Do not go back in until responders or the barracks manager say it is safe." },
-        { "when": "\\b(988|838255|crisis|suicid|better off|harm)\\b", "line": "Call or text the Veterans and Military Crisis Line: dial 988 then press 1, or text 838255. If you are in danger now, call 911." },
-        { "when": "\\b911\\b", "line": "Call 911 now." }
+        {
+          "when": "\\b(co|carbon monoxide|smoke|fire|gas|spark|sparking|alarm)\\b",
+          "line": "Get out of the room to fresh air now and call 911. Do not go back in until responders or the barracks manager say it is safe."
+        },
+        {
+          "when": "\\b(988|838255|crisis|suicid|better off|harm)\\b",
+          "line": "Call or text the Veterans and Military Crisis Line: dial 988 then press 1, or text 838255. If you are in danger now, call 911."
+        },
+        {
+          "when": "\\b911\\b",
+          "line": "Call 911 now."
+        }
+      ],
+      "allowed": [
+        "\\b(can't|cannot|can not|won't|will not|not|never|isn't|is not)\\b[^.]{0,30}\\b(confidential|secret|anonymous)\\b",
+        "\\bcorrection\\b[^.]*\\bI (called|said|told you)\\b"
       ]
     },
     "action_claim": {

@@ -69,8 +69,11 @@ ok(res['S2-t2'].reply.includes('The on-call staff are already paged (ESC-0001)')
 ok(!/technician's call/.test(res['M1-t2'].reply) && res['M1-t2'].reply.includes('Moving installed alarms between rooms would not add any new ones.'), 'M1: "the technician\'s call" dropped, the fact kept');
 ok(!res['R1-t2'].reply.includes('You can ask T. Hale directly') && res['R1-t2'].reply.includes('HT-0009 is a barracks manager task completed by T. Hale (sample).'), 'R1: "You can ask T. Hale directly." removed from its bullet, the record line kept');
 ok(!/program manager know/.test(res['V1-t4'].reply) && res['V1-t4'].reply.includes('I have flagged it to the site lead.'), 'V1: claim rewritten to the site lead only, matching ESC-0001');
-ok(FAILS.every((id) => res[id].removed.length === 1), 'exactly one sentence removed or rewritten in each of the five replies');
-ok(logged.length === 5 && logged.every((e) => e.removed.length === 1 && e.counts.removed === 1 && e.run_id), 'each check produces a log entry listing the removed claim');
+// R1 t2 also holds "I can ask the program manager to arrange access", which the run-002 judge marked UNSUPPORTED too.
+const EXPECT = { 'R1-t2': 2 };
+ok(FAILS.every((id) => res[id].removed.length === (EXPECT[id] || 1)), 'one sentence removed or rewritten in each of the five replies (two in R1 t2)');
+ok(res['R1-t2'].removed.some((x) => /arrange access/.test(x.sentence)), 'R1: the second unbacked claim ("program manager to arrange access") is also removed');
+ok(logged.length === 5 && logged.every((e, k) => e.removed.length === (EXPECT[FAILS[k]] || 1) && e.counts.removed === e.removed.length && e.run_id), 'each check produces a log entry listing the removed claims');
 
 // 3. A lazy checker model that keeps everything: the rules still remove all five.
 const lazy = mockModel([]);
@@ -94,7 +97,51 @@ ok(!/program manager knows/.test(v.reply) && v.removed[0].by === 'rules' && v.re
 const ctl = await checkReply(input(byId['S1-t1']), { callModel: mockModel(TABLE) });
 ok(!ctl.changed && ctl.reply.replace(/\s+/g, ' ').trim() === byId['S1-t1'].draft.replace(/\s+/g, ' ').trim(), 'control: a clean reply passes unchanged');
 
-// 7. Logging to agent_runs on the local database, as the soldier_liaison agent (brp_agent role).
+// 7. "Who decides" lines: a decider the pack backs passes; an invented one is still cut (run-002 replay, Oct 2026).
+const R = (t, extra = {}) => ruleCheck(t, { actions: [], safetyConversation: false, ...extra });
+for (const t of [
+  "I'll pass you the answer, and if the date moves, I'll tell you right away and the site lead (ESC-0001) decides what to do.",
+  'If the date moves, the site lead decides again.',
+  'Site lead R. Okafor: decide again if that date moves (backorder decision).',
+  "I can't promise an answer inside 30 minutes; the site lead decides.",
+  'As soon as the site lead decides, we\'ll call you back.',
+  "Your request is with Andrew (ESC-0001), and he's the one who can decide what BRP says.",
+  'I\'ll make sure Andrew knows about your 5 p.m. deadline so he can decide whether to respond before then.',
+  "Only a barracks manager who covers the building can verify, in a verification task, and a site lead can't stand in for that.",
+  'A named backup who can verify repairs when the Bldg 410-415 barracks manager is not available.',
+  'Above $2,500 the program manager approves.',
+]) ok(R(t, { actions: [{ _id: 'ESC-0001', type: 'escalate', to: 'site_lead' }, { _id: 'ESC-0002', type: 'escalate', to: 'andrew' }] }) === null, `rules: backed authority passes: "${t.slice(0, 60)}..."`);
+for (const t of [
+  'Responders decide that.',
+  'Whether any of that is "dropping the ball" is a judgment for the program manager, not me.',
+  "Whether another barracks manager can verify in place of T. Hale is the site lead's call.",
+  'The barracks manager decides where you will live while the repair is pending.',
+  'The vendor decides the ship date.',
+  "He'll decide whether and how to respond.",
+]) ok(R(t)?.category === 'authority', `rules: invented authority still cut: "${t.slice(0, 60)}..."`);
+ok(R("He'll decide whether and how to respond.", { before: "I've passed Andrew your request (ESC-0001)." }) === null, 'rules: "he decides" passes when the draft just named Andrew');
+ok(R("He'll decide whether and how to respond.", { before: 'I paged the technician (ESC-0001).' })?.category === 'authority', 'rules: "he decides" is cut when the role just named is not a backed decider');
+const p1 = await checkReply({ agent: 'soldier_liaison', draft: "BRP: Andrew is the only person who speaks for the company to media. I've passed him your request (ESC-0001). He'll decide whether and how to respond.", conversation: [], actions: [{ _id: 'ESC-0001', type: 'escalate', to: 'andrew' }], pack: PACK, records: null }, {});
+ok(!p1.changed, 'full check: P1 t6 reply with "He\'ll decide" after naming Andrew passes unchanged (rules only)');
+
+// 8. Rules added for claims the run-002 replay missed, and lines they must not cut.
+for (const [t, cat] of [
+  ['With counts, it can be reported.', 'capability'],
+  ["A whole-building cost would have to come from the Army's own offices; BRP does not speak to Army funding.", 'capability'],
+  ['For a formal check, I can ask the program manager to arrange access to the underlying records for you.', 'capability'],
+  ['Your unit or the installation directory will have them.', 'capability'],
+]) ok(R(t)?.category === cat, `rules: missed claim now cut: "${t.slice(0, 60)}..."`);
+for (const t of [
+  'I will confirm that with the program manager and come back to you.',
+  'I can ask the program manager to get you a count with a source.',
+  'BRP records hold work orders, not room or bed counts, so there is no habitability rate today.',
+  "I don't have phone numbers or hours for the JAG, claims or VITA offices in my records.",
+]) ok(R(t) === null, `rules: still passes: "${t.slice(0, 60)}..."`);
+ok(R("I already let the on-call staff and your chain of command know (ESC-0001, ESC-0002), and I can't take that back or keep it secret.", { actions: [{ _id: 'ESC-0001', type: 'escalate', to: 'on_call_human' }, { _id: 'ESC-0002', type: 'escalate', to: 'chain_of_command' }], safetyConversation: true }) === null, 'rules: "I can\'t ... keep it secret" (a negation) is not safety advice');
+ok(R('One correction to what I said before: I called the Crisis Line confidential.', { safetyConversation: true }) === null, 'rules: the agent correcting its own "confidential" claim passes');
+ok(R("It's confidential support from people trained for this.", { safetyConversation: true })?.category === 'safety', 'rules: "It\'s confidential support" is still cut');
+
+// 9. Logging to agent_runs on the local database, as the soldier_liaison agent (brp_agent role).
 const runId = randomUUID();
 const out = await checkReply(input(byId['V1-t4'], { runId }), { callModel: model, logRun: sqlLogger(agentExec('soldier_liaison')) });
 ok(out.log && out.log.logged === true && out.log.removed === 1, 'removed claims logged through agent_log_reply_check');

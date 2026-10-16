@@ -2,7 +2,8 @@
 //
 // It removes or rewrites any sentence that:
 //   capability    states what another person, office, line or system can do, when, or how fast
-//   authority     states who decides something (unless the knowledge pack says so)
+//   authority     states who decides something (unless the knowledge pack says so: allowed lines, or a backed role
+//                 named next to the decide word and not on a topic the pack gives to someone else)
 //   safety        gives safety advice beyond the pack's script (core/02)
 //   action_claim  says an action happened, or will happen, with no action record in the conversation
 // Two passes: fixed rules (reply-checker.config.json), then a separate, cheaper model call that sees the draft, the
@@ -66,16 +67,46 @@ export function ruleCheck(sentence, ctx, cfg = CONFIG) {
   }
   for (const cat of ['capability', 'authority']) {
     const c = C[cat];
-    const hit = c.patterns.find((p) => rx(p).test(s));
-    if (hit && !(c.allowed || []).some((p) => rx(p).test(s))) return { category: cat, reason: `${c.label}: matches /${hit}/` };
+    // authority: every matching pattern must name a backed decider; capability: any match is cut
+    const hit = c.patterns.find((p) => rx(p).test(s) && !(cat === 'authority' && backedAuthority(s, p, ctx, c)));
+    if (!hit || (c.allowed || []).some((p) => rx(p).test(s))) continue;
+    return { category: cat, reason: `${c.label}: matches /${hit}/` };
   }
   if (safetyCtx) {
     let rest = s;
     for (const line of C.safety.script) rest = rest.replace(line, ' ');
     const hit = C.safety.patterns.find((p) => rx(p).test(rest));
-    if (hit) return { category: 'safety', reason: `${C.safety.label}: matches /${hit}/` };
+    if (hit && !(C.safety.allowed || []).some((p) => rx(p).test(rest))) return { category: 'safety', reason: `${C.safety.label}: matches /${hit}/` };
   }
   return null;
+}
+
+/**
+ * Authority sentence naming a decider the pack backs (config authority.backed): the role must sit next to the
+ * decide/approve/verify words (80 characters before, 40 after), or the sentence says "he"/"she" and the role is named in
+ * the draft's last few sentences (ctx.before). The topic must not be one the pack says that role does not decide.
+ */
+function backedAuthority(s, hit, ctx, c) {
+  const m = s.match(rx(hit));
+  if (!m) return false;
+  const fits = (b) => (!b.only || rx(b.only).test(s)) && (!b.not || !rx(b.not).test(s));
+  const backed = c.backed || [];
+  // The decider is a backed role inside the match ("the site lead's call"), else the one named closest before it, else
+  // the closest after it (within the window).
+  const pos = (b, text) => { let at = -1; for (const k of text.matchAll(new RegExp(b.who, 'gi'))) at = k.index; return at; };
+  const pre = s.slice(Math.max(0, m.index - 80), m.index);
+  const post = s.slice(m.index, m.index + m[0].length + 40);
+  const before = backed.map((b) => [b, pos(b, pre)]).filter(([, i]) => i >= 0).sort((x, y) => y[1] - x[1]);
+  const after = backed.map((b) => [b, post.search(rx(b.who))]).filter(([, i]) => i >= 0).sort((x, y) => x[1] - y[1]);
+  const inside = backed.map((b) => [b, pos(b, m[0])]).filter(([, i]) => i >= 0).sort((x, y) => y[1] - x[1]);
+  const decider = (inside[0] || before[0] || after[0] || [])[0];
+  if (decider) return fits(decider);
+  if (backed.some((b) => rx(b.who).test(s))) return false;
+  if (c.pronoun && rx(c.pronoun).test(s) && ctx.before) {
+    const prior = backed.filter((b) => rx(b.who).test(ctx.before));
+    return prior.length > 0 && prior.every(fits);
+  }
+  return false;
 }
 
 /** For an action claim: which role, record id or kind of action is not backed by an action record? null if backed. */
@@ -145,7 +176,9 @@ export async function checkReply(input, deps = {}) {
   const numbered = [];
   paras.forEach((items, p) => items.forEach((it, l) => it.sentences.forEach((text, k) => numbered.push({ i: numbered.length + 1, p, l, k, text }))));
   const flags = {};
-  for (const x of numbered) { const f = ruleCheck(x.text, ctx, cfg); if (f) flags[x.i] = f; }
+  // Each sentence also sees the draft's three sentences before it, so "he decides" can resolve to a role just named.
+  const ctxFor = (x) => ({ ...ctx, before: numbered.slice(Math.max(0, x.i - 4), x.i - 1).map((y) => y.text).join(' ') });
+  for (const x of numbered) { const f = ruleCheck(x.text, ctxFor(x), cfg); if (f) flags[x.i] = f; }
 
   let verdicts = {}, modelError = null;
   if (deps.callModel) {
@@ -167,7 +200,7 @@ export async function checkReply(input, deps = {}) {
     const f = flags[x.i];
     if (v.verdict === 'rewrite' && v.rewrite && String(v.rewrite).trim()) {
       const rw = String(v.rewrite).trim();
-      const again = ruleCheck(rw, ctx, cfg);
+      const again = ruleCheck(rw, ctxFor(x), cfg);
       if (!again) { keep[x.i] = rw; removed.push({ sentence: x.text, category: v.category || (f && f.category) || 'other', reason: v.reason || (f && f.reason) || '', by: 'model', replacement: rw }); continue; }
       removed.push({ sentence: x.text, category: v.category || again.category, reason: `model rewrite still failed the rules (${again.reason})`, by: 'rules', replacement: null });
       continue;

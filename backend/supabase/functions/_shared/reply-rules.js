@@ -45,16 +45,40 @@ export function ruleCheck(sentence, ctx, cfg) {
   }
   for (const cat of ['capability', 'authority']) {
     const c = C[cat];
-    const hit = c.patterns.find((p) => rx(p).test(s));
+    const hit = c.patterns.find((p) => rx(p).test(s) && !(cat === 'authority' && backedAuthority(s, p, ctx, c)));
     if (hit && !(c.allowed || []).some((p) => rx(p).test(s))) return { category: cat, reason: `${c.label}: matches /${hit}/` };
   }
   if (safetyCtx) {
     let rest = s;
     for (const line of C.safety.script) rest = rest.replace(line, ' ');
     const hit = C.safety.patterns.find((p) => rx(p).test(rest));
-    if (hit) return { category: 'safety', reason: `${C.safety.label}: matches /${hit}/` };
+    if (hit && !(C.safety.allowed || []).some((p) => rx(p).test(rest))) return { category: 'safety', reason: `${C.safety.label}: matches /${hit}/` };
   }
   return null;
+}
+
+// Same as backedAuthority in reply-checker.mjs: a decider the pack backs (config authority.backed) passes.
+function backedAuthority(s, hit, ctx, c) {
+  const m = s.match(rx(hit));
+  if (!m) return false;
+  const fits = (b) => (!b.only || rx(b.only).test(s)) && (!b.not || !rx(b.not).test(s));
+  const backed = c.backed || [];
+  // The decider is a backed role inside the match ("the site lead's call"), else the one named closest before it, else
+  // the closest after it (within the window).
+  const pos = (b, text) => { let at = -1; for (const k of text.matchAll(new RegExp(b.who, 'gi'))) at = k.index; return at; };
+  const pre = s.slice(Math.max(0, m.index - 80), m.index);
+  const post = s.slice(m.index, m.index + m[0].length + 40);
+  const before = backed.map((b) => [b, pos(b, pre)]).filter(([, i]) => i >= 0).sort((x, y) => y[1] - x[1]);
+  const after = backed.map((b) => [b, post.search(rx(b.who))]).filter(([, i]) => i >= 0).sort((x, y) => x[1] - y[1]);
+  const inside = backed.map((b) => [b, pos(b, m[0])]).filter(([, i]) => i >= 0).sort((x, y) => y[1] - x[1]);
+  const decider = (inside[0] || before[0] || after[0] || [])[0];
+  if (decider) return fits(decider);
+  if (backed.some((b) => rx(b.who).test(s))) return false;
+  if (c.pronoun && rx(c.pronoun).test(s) && ctx.before) {
+    const prior = backed.filter((b) => rx(b.who).test(ctx.before));
+    return prior.length > 0 && prior.every(fits);
+  }
+  return false;
 }
 
 function actionGap(s, actions, ac) {
@@ -90,7 +114,7 @@ export function checkRules(input, cfg) {
   const removed = [];
   const keep = {};
   for (const x of numbered) {
-    const f = ruleCheck(x.text, ctx, cfg);
+    const f = ruleCheck(x.text, { ...ctx, before: numbered.slice(Math.max(0, x.i - 4), x.i - 1).map((y) => y.text).join(' ') }, cfg);
     if (f) { removed.push({ sentence: x.text, category: f.category, reason: f.reason, by: 'rules (model unavailable)', replacement: null }); continue; }
     keep[x.i] = x.text;
   }
